@@ -60,12 +60,8 @@ function HeroBalance({ globalNetBalance, txCount }) {
   const isNegative = globalNetBalance < 0;
   const isZero     = globalNetBalance === 0;
 
-  // Dynamic glow under the number
-  const glowColor = isPositive
-    ? 'rgba(50, 215, 75, 0.22)'
-    : isNegative
-    ? 'rgba(255, 69, 58, 0.22)'
-    : 'transparent';
+  // Determine the color based on the mathematical balance
+  const glowColorClass = isPositive ? 'bg-[#32D74B]' : isNegative ? 'bg-[#FF453A]' : 'bg-white';
 
   return (
     <motion.div
@@ -80,28 +76,25 @@ function HeroBalance({ globalNetBalance, txCount }) {
       </p>
 
       {/* Giant balance number */}
-      <div className="relative inline-block">
-        {/* Glow halo behind the number */}
+      <div className="relative flex justify-center items-center">
+        {/* The Ambient Light Layer */}
         {!isGhostMode && (
-          <div
-            className="absolute inset-0 -z-10 blur-3xl scale-150 rounded-full transition-colors duration-500"
-            style={{ background: glowColor }}
+          <div 
+            className={`absolute w-3/4 h-3/4 ${glowColorClass} blur-[60px] opacity-30 z-0 pointer-events-none transition-colors duration-700`} 
+            style={{ transform: 'translateZ(0)' }}
           />
         )}
 
-        <AmountDisplay
-          value={globalNetBalance}
-          showSign={true}
-          colored={true}
-          ghostIndex={0}
-          className="text-6xl md:text-8xl font-bold tracking-tighter leading-none"
-          style={{
-            textShadow: isGhostMode ? 'none'
-              : isPositive ? '0 0 60px rgba(50,215,75,0.4)'
-              : isNegative ? '0 0 60px rgba(255,69,58,0.4)'
-              : 'none',
-          }}
-        />
+        {/* The Foreground Amount Text */}
+        <div className="relative z-10">
+          <AmountDisplay
+            value={globalNetBalance}
+            showSign={true}
+            colored={true}
+            ghostIndex={0}
+            className="text-6xl md:text-8xl font-bold tracking-tighter leading-none"
+          />
+        </div>
       </div>
       
       {/* Subtitle */}

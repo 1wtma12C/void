@@ -489,19 +489,27 @@ export default function ContactLedger({ profile }) {
             {contact?.name}
           </motion.h1>
 
-          <AmountDisplay
-            value={netBalance}
-            showSign={true}
-            colored={true}
-            ghostIndex={0}
-            className="text-5xl md:text-6xl font-bold tracking-tight"
-            style={{
-              textShadow: isGhostMode ? 'none'
-                : isPositive ? '0 0 40px rgba(50,215,75,0.35)'
-                : isNegative ? '0 0 40px rgba(255,69,58,0.35)'
-                : 'none',
-            }}
-          />
+          {/* Dynamic Ambient Glow Wrapper */}
+          <div className="relative flex justify-center items-center">
+            {/* The Ambient Light Layer */}
+            {!isGhostMode && (
+              <div 
+                className={`absolute w-3/4 h-3/4 ${isPositive ? 'bg-[#32D74B]' : isNegative ? 'bg-[#FF453A]' : 'bg-white'} blur-[60px] opacity-30 z-0 pointer-events-none transition-colors duration-700`} 
+                style={{ transform: 'translateZ(0)' }}
+              />
+            )}
+
+            {/* The Foreground Amount Text */}
+            <div className="relative z-10">
+              <AmountDisplay
+                value={netBalance}
+                showSign={true}
+                colored={true}
+                ghostIndex={0}
+                className="text-5xl md:text-6xl font-bold tracking-tight"
+              />
+            </div>
+          </div>
         </div>
 
         <p className="text-[#3A3A3C] text-xs mt-0.5">
