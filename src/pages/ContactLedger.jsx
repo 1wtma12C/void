@@ -31,6 +31,13 @@ const LEDGER_FILTERS = [
   { id: 'received', label: 'Received Only' },
 ];
 
+const LEDGER_TIMEFRAMES = [
+  { id: 'all',     label: 'All Time' },
+  { id: 'month',   label: 'This Month' },
+  { id: '30days',  label: 'Last 30 Days' },
+  { id: 'custom',  label: 'Custom Range' },
+];
+
 const LEDGER_SORTS = [
   { id: 'date_desc',   label: 'Newest First' },
   { id: 'date_asc',    label: 'Oldest First' },
@@ -156,58 +163,69 @@ function TimelineEntry({ tx, ghostIndex }) {
         layout
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
-        transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-        className="flex flex-col items-center justify-center px-4 py-1 w-full"
+        exit={{    opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+        className="relative w-full px-4 py-1"
       >
-        {/* Row-based Layout */}
-        <div
-          className="relative w-full max-w-[92%] rounded-2xl px-5 py-4 flex flex-row items-center justify-between group overflow-hidden"
-          style={{
-            background:  isLent ? 'rgba(255,69,58,0.06)'  : 'rgba(50,215,75,0.06)',
-            border:      `1px solid ${isLent ? 'rgba(255,69,58,0.12)' : 'rgba(50,215,75,0.12)'}`,
-          }}
-        >
-          {/* Metadata: Note & Date */}
-          <div className="flex flex-col items-start text-left max-w-[65%]">
-            {tx.note ? (
-              <p className="text-[#F5F5F7] text-[13px] font-medium leading-tight mb-1 truncate w-full">
-                {tx.note}
-              </p>
-            ) : (
-              <p className="text-[#3A3A3C] text-[13px] italic font-medium leading-tight mb-1">
-                No note
-              </p>
-            )}
-            <p className="text-[#3A3A3C] text-[10px] uppercase tracking-widest font-bold">
-              {formatRelativeDate(tx.date)}
-            </p>
-          </div>
-
-          {/* Hero: Amount */}
-          <div className="flex flex-col items-end text-right ml-4">
-            <AmountDisplay
-              value={isLent ? -tx.amount : tx.amount}
-              showSign={true}
-              colored={true}
-              ghostIndex={ghostIndex}
-              className="text-xl font-bold tracking-tight leading-none"
-            />
-          </div>
-
-          {/* Delete button (Glass circle) */}
-          <motion.button
-            onClick={() => setShowConfirm(true)}
-            whileTap={{ scale: 0.88 }}
-            disabled={deleting}
-            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer opacity-0 md:group-hover:opacity-100 transition-opacity md:opacity-0 opacity-100 backdrop-blur-md bg-black/40 border border-white/10"
+        {/* Background Layer (Crimson Nebula) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div 
+            className="w-full max-w-[92%] h-[calc(100%-8px)] rounded-2xl flex items-center justify-end px-6"
+            style={{ background: '#FF453A' }}
           >
-            {deleting
-              ? <Loader2 size={10} className="animate-spin text-white" />
-              : <Trash2 size={12} className="text-[#FF453A]" />
-            }
-          </motion.button>
+            <div className="text-white">
+              <Trash2 size={20} strokeWidth={2.5} />
+            </div>
+          </div>
         </div>
+
+        {/* Foreground Content (Swipeable) */}
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: -100, right: 0 }}
+          dragElastic={0.15}
+          onDragEnd={(e, info) => {
+            if (info.offset.x < -70) {
+              setShowConfirm(true);
+            }
+          }}
+          className="relative z-10 w-full flex justify-center"
+        >
+          <div
+            className="relative w-full max-w-[92%] rounded-2xl px-5 py-4 flex flex-row items-center justify-between group overflow-hidden"
+            style={{
+              background:  isLent ? 'rgba(255,69,58,0.06)'  : 'rgba(50,215,75,0.06)',
+              border:      `1px solid ${isLent ? 'rgba(255,69,58,0.12)' : 'rgba(50,215,75,0.12)'}`,
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            {/* Metadata: Note & Date */}
+            <div className="flex flex-col items-start text-left max-w-[65%]">
+              {tx.note ? (
+                <p className="text-[#F5F5F7] text-[13px] font-medium leading-tight mb-1 truncate w-full">
+                  {tx.note}
+                </p>
+              ) : (
+                <p className="text-[#3A3A3C] text-[13px] italic font-medium leading-tight mb-1">
+                  No note
+                </p>
+              )}
+              <p className="text-[#3A3A3C] text-[10px] uppercase tracking-widest font-bold">
+                {formatRelativeDate(tx.date)}
+              </p>
+            </div>
+
+            {/* Hero: Amount */}
+            <div className="flex flex-col items-end text-right ml-4">
+              <AmountDisplay
+                value={isLent ? -tx.amount : tx.amount}
+                showSign={true}
+                colored={true}
+                ghostIndex={ghostIndex}
+                className="text-xl font-bold tracking-tight leading-none"
+              />
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
 
       <ConfirmModal
@@ -297,9 +315,11 @@ export default function ContactLedger({ profile }) {
   const [deleteLoading,   setDeleteLoading]   = useState(false);
   const [pdfLoading,      setPdfLoading]      = useState(false);
 
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [sort,   setSort]   = useState('date_desc');
+  const [search, setSearch]       = useState('');
+  const [filter, setFilter]       = useState('all');
+  const [sort,   setSort]         = useState('date_desc');
+  const [timeframe, setTimeframe] = useState('all');
+  const [customRange, setCustomRange] = useState({ start: '', end: '' });
 
   const contact      = getContact(id);
   const transactions = getContactTransactions(id);
@@ -318,20 +338,47 @@ export default function ContactLedger({ profile }) {
       );
     }
 
-    // 2. Filter
+    // 2. Filter by Type
     if (filter === 'lent')     list = list.filter(tx => tx.type === TX_TYPE.LENT);
     if (filter === 'received') list = list.filter(tx => tx.type === TX_TYPE.RECEIVED);
 
-    // 3. Sort
+    // 3. Filter by Timeframe
+    if (timeframe !== 'all') {
+      const now = new Date();
+      list = list.filter(tx => {
+        const txDate = tx.date?.toDate?.() || new Date(tx.date);
+        
+        if (timeframe === 'month') {
+          return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+        }
+        if (timeframe === '30days') {
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(now.getDate() - 30);
+          return txDate >= thirtyDaysAgo;
+        }
+        if (timeframe === 'custom' && customRange.start && customRange.end) {
+          const start = new Date(customRange.start);
+          const end   = new Date(customRange.end);
+          end.setHours(23, 59, 59, 999); // End of day
+          return txDate >= start && txDate <= end;
+        }
+        return true;
+      });
+    }
+
+    // 4. Sort
     list.sort((a, b) => {
-      if (sort === 'date_desc') return b.date?.toDate?.() - a.date?.toDate?.();
-      if (sort === 'date_asc')  return a.date?.toDate?.() - b.date?.toDate?.();
+      const dateA = a.date?.toDate?.() || new Date(a.date);
+      const dateB = b.date?.toDate?.() || new Date(b.date);
+      
+      if (sort === 'date_desc')   return dateB - dateA;
+      if (sort === 'date_asc')    return dateA - dateB;
       if (sort === 'amount_desc') return b.amount - a.amount;
       return 0;
     });
 
     return list;
-  }, [transactions, search, filter, sort]);
+  }, [transactions, search, filter, sort, timeframe, customRange]);
 
   // ── WhatsApp nudge ─────────────────────────────────────────────
   const handleWhatsApp = useCallback(() => {
@@ -339,11 +386,11 @@ export default function ContactLedger({ profile }) {
     if (!contact.phone) { setShowPhonePrompt(true); return; }
 
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
-    const signature = 'and hey from manthan';
+    const signature = 'and hey from Manthan';
     
     const message = netBalance > 0
-      ? `Hi ${contact.name}, just a gentle nudge! You have a pending balance of ₹${absAmt} with me. You can settle it via UPI: ${profile?.upiId ?? 'my UPI'}. Thanks! ${signature} — Sent via VOID`
-      : `Hi ${contact.name}, a quick update — I owe you ₹${absAmt}. I'll settle it soon via UPI: ${profile?.upiId ?? 'my UPI'}. ${signature} — Sent via VOID`;
+      ? `Hey ${contact.name}, just keeping our records synced. Your current pending balance is ₹${absAmt}. You can settle it via my UPI here: ${profile?.upiId ?? '[UPI ID]'}. ${signature}`
+      : `Hey ${contact.name}, just keeping our records synced. My ledger shows I currently owe you ₹${absAmt}. I will settle this soon! ${signature}`;
 
     window.open(buildWhatsAppUrl(contact.phone, message), '_blank');
   }, [contact, netBalance, profile]);
@@ -354,8 +401,11 @@ export default function ContactLedger({ profile }) {
     if (!contact.phone) { setShowPhonePrompt(true); return; }
 
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
-    const signature = 'and hey from manthan';
-    const message = `Hi ${contact.name}, pending balance: ₹${absAmt}. Settle via: ${profile?.upiId ?? 'my UPI'}. ${signature} — Sent via VOID`;
+    const signature = 'and hey from Manthan';
+    
+    const message = netBalance > 0
+      ? `Hey ${contact.name}, just keeping our records synced. Your current pending balance is ₹${absAmt}. You can settle it via my UPI here: ${profile?.upiId ?? '[UPI ID]'}. ${signature}`
+      : `Hey ${contact.name}, just keeping our records synced. My ledger shows I currently owe you ₹${absAmt}. I will settle this soon! ${signature}`;
     
     window.open(`sms:${contact.phone}&body=${encodeURIComponent(message)}`, '_self');
   }, [contact, netBalance, profile]);
@@ -364,8 +414,10 @@ export default function ContactLedger({ profile }) {
   const handlePhoneSaved = useCallback((phone) => {
     setShowPhonePrompt(false);
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
-    const signature = 'and hey from manthan';
-    const message = `Hi ${contact.name}, just a gentle nudge! Pending balance: ₹${absAmt}. Settle via: ${profile?.upiId ?? 'my UPI'}. ${signature} — Sent via VOID`;
+    const signature = 'and hey from Manthan';
+    const message = netBalance > 0
+      ? `Hey ${contact.name}, just keeping our records synced. Your current pending balance is ₹${absAmt}. You can settle it via my UPI here: ${profile?.upiId ?? '[UPI ID]'}. ${signature}`
+      : `Hey ${contact.name}, just keeping our records synced. My ledger shows I currently owe you ₹${absAmt}. I will settle this soon! ${signature}`;
     window.open(buildWhatsAppUrl(phone, message), '_blank');
   }, [contact, netBalance, profile]);
 
@@ -410,43 +462,22 @@ export default function ContactLedger({ profile }) {
     <div className="flex flex-col min-h-full">
 
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="px-6 pt-2 pb-6 text-center">
-        {/* Avatar */}
-        <motion.div
-          onClick={() => setShowEditModal(true)}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1,   opacity: 1 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 26 }}
-          className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3 cursor-pointer"
-          style={{
-            background: isPositive ? 'rgba(50,215,75,0.12)'  : isNegative ? 'rgba(255,69,58,0.12)' : 'rgba(255,255,255,0.06)',
-            border:     `1px solid ${isPositive ? 'rgba(50,215,75,0.25)' : isNegative ? 'rgba(255,69,58,0.25)' : 'rgba(255,255,255,0.1)'}`,
-            color:      isPositive ? '#32D74B' : isNegative ? '#FF453A' : '#8E8E93',
-          }}
-          aria-label="Edit Profile"
-        >
-          {contact?.name?.charAt(0)?.toUpperCase() ?? '?'}
-        </motion.div>
-
-        {/* Name */}
-        <motion.h1
-          onClick={() => setShowEditModal(true)}
+      <div className="px-6 pt-2 pb-6 flex flex-col items-center justify-center gap-2 text-center">
+        {/* Name (Top) */}
+        <motion.p
           initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ delay: 0.05, type: 'spring', stiffness: 300, damping: 28 }}
-          className="text-2xl font-bold text-[#F5F5F7] tracking-tight cursor-pointer inline-block"
+          className="text-xl text-[#8E8E93] font-medium tracking-wide"
         >
           {contact?.name}
-        </motion.h1>
+        </motion.p>
 
-        {/* Net balance */}
+        {/* Net balance (Bottom) */}
         <AmountDisplay
           value={netBalance}
           showSign={true}
           colored={true}
           ghostIndex={0}
-          className="text-4xl font-bold tracking-[-0.03em] mt-1"
+          className="text-5xl md:text-6xl font-bold tracking-[-0.03em]"
           style={{
             textShadow: isGhostMode ? 'none'
               : isPositive ? '0 0 40px rgba(50,215,75,0.35)'
@@ -455,12 +486,12 @@ export default function ContactLedger({ profile }) {
           }}
         />
 
-        <p className="text-[#3A3A3C] text-xs mt-1">
-          {isPositive ? 'owes you' : isNegative ? 'you owe' : 'all settled'}
+        <p className="text-[#3A3A3C] text-[10px] uppercase tracking-[0.15em] font-bold mt-1">
+          {isPositive ? 'Owes you' : isNegative ? 'You owe' : 'All settled'}
           {transactions.length > 0 && ` · ${transactions.length} entries`}
         </p>
 
-        {/* ── Action pills ──────────────────────────────────────── */}
+        {/* Action pills */}
         <motion.div
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, type: 'spring', stiffness: 280, damping: 28 }}
@@ -532,6 +563,11 @@ export default function ContactLedger({ profile }) {
           sortOptions={LEDGER_SORTS}
           activeSort={sort}
           onSortChange={setSort}
+          timeframeOptions={LEDGER_TIMEFRAMES}
+          activeTimeframe={timeframe}
+          onTimeframeChange={setTimeframe}
+          customRange={customRange}
+          onCustomRangeChange={setCustomRange}
         />
       )}
 
