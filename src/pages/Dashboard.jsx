@@ -172,10 +172,12 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
       onClick={() => navigate(`/contact/${contact.id}`)}
       whileTap={{ scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-      className="w-[calc(50%-0.5rem)] md:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.5rem)] xl:w-[calc(16.666%-1.5rem)] min-w-[140px] max-w-[200px] flex-shrink-0 flex flex-col items-center justify-center text-center p-6 h-full min-h-[140px] cursor-pointer select-none rounded-[20px] relative overflow-hidden group"
+      className="w-[calc(33.333%-0.5rem)] sm:w-[calc(25%-0.75rem)] md:w-[calc(20%-1rem)] lg:w-[calc(16.666%-1rem)] flex-shrink-0 flex flex-col items-center justify-center text-center p-3 md:p-6 h-full cursor-pointer select-none rounded-2xl relative overflow-hidden group"
       style={{
         background: 'rgba(255,255,255,0.03)',
         border: '1px solid rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
       }}
       role="button"
       aria-label={`View ledger for ${contact.name}`}
@@ -186,7 +188,7 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
 
       {/* Avatar circle */}
       <div
-        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold mb-2 shadow-inner"
+        className="w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold mb-2 shadow-inner"
         style={{
           background: isPositive
             ? 'rgba(50,215,75,0.12)'
@@ -200,9 +202,9 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
       </div>
 
       {/* Name */}
-      <p className="text-xs text-gray-300 mb-1 font-medium tracking-tight truncate w-full group-hover:text-white transition-colors">
+      <span className="text-xs md:text-sm text-gray-400 mb-0.5 font-medium tracking-tight truncate w-full group-hover:text-white transition-colors">
         {displayName}
-      </p>
+      </span>
 
       {/* Balance */}
       <AmountDisplay
@@ -210,7 +212,7 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
         showSign={true}
         colored={true}
         ghostIndex={ghostIndex}
-        className="text-lg md:text-2xl font-bold truncate w-full text-center leading-none"
+        className="text-base md:text-xl font-bold truncate w-full text-center leading-none mt-1"
       />
     </motion.div>
   );
@@ -407,7 +409,7 @@ export default function Dashboard({ profile }) {
           {oweYou.length > 0 && (
             <section aria-label="People who owe you">
               <Divider label={`Owed to you · ${oweYou.length}`} />
-              <div className="flex flex-wrap justify-center content-start gap-4 md:gap-6 w-full max-w-7xl mx-auto px-4">
+              <div className="flex flex-wrap justify-center content-start gap-2 md:gap-4 w-full px-2">
                 {oweYou.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
@@ -425,7 +427,7 @@ export default function Dashboard({ profile }) {
           {youOwe.length > 0 && (
             <section aria-label="People you owe" className={oweYou.length > 0 ? 'mt-6' : ''}>
               <Divider label={`You owe · ${youOwe.length}`} />
-              <div className="flex flex-wrap justify-center content-start gap-4 md:gap-6 w-full max-w-7xl mx-auto px-4">
+              <div className="flex flex-wrap justify-center content-start gap-2 md:gap-4 w-full px-2">
                 {youOwe.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
@@ -443,7 +445,7 @@ export default function Dashboard({ profile }) {
           {newEmpty.length > 0 && (
             <section aria-label="Recent contacts" className="mt-6">
               <Divider label="Recently Added" />
-              <div className="flex flex-wrap justify-center content-start gap-4 md:gap-6 w-full max-w-7xl mx-auto px-4">
+              <div className="flex flex-wrap justify-center content-start gap-2 md:gap-4 w-full px-2">
                 {newEmpty.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
