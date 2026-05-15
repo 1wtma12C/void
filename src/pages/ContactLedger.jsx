@@ -31,17 +31,17 @@ const LEDGER_FILTERS = [
   { id: 'received', label: 'Received Only' },
 ];
 
-const LEDGER_TIMEFRAMES = [
-  { id: 'all',     label: 'All Time' },
-  { id: 'month',   label: 'This Month' },
-  { id: '30days',  label: 'Last 30 Days' },
-  { id: 'custom',  label: 'Custom Range' },
-];
-
 const LEDGER_SORTS = [
   { id: 'date_desc',   label: 'Newest First' },
   { id: 'date_asc',    label: 'Oldest First' },
   { id: 'amount_desc', label: 'Amount: High to Low' },
+];
+
+const TIME_FILTERS = [
+  { id: 'all',      label: 'All Time' },
+  { id: 'month',    label: 'This Month' },
+  { id: 'days30',   label: 'Last 30 Days' },
+  { id: 'custom',   label: 'Custom Range' },
 ];
 
 // ── PDF generator (lazy import to avoid bundling html2pdf eagerly) ──
@@ -163,39 +163,43 @@ function TimelineEntry({ tx, ghostIndex }) {
         layout
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{    opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-        className="relative w-full px-4 py-1"
+        exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
+        transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+        className="relative flex flex-col items-center justify-center px-4 py-1 w-full"
       >
-        {/* Background Layer (Crimson Nebula) */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div 
-            className="w-full max-w-[92%] h-[calc(100%-8px)] rounded-2xl flex items-center justify-end px-6"
-            style={{ background: '#FF453A' }}
+        {/* Swipe-to-delete Crimson Nebula Layer */}
+        <div 
+          className="absolute inset-y-1 right-4 left-4 rounded-2xl bg-[#FF453A] flex items-center justify-end px-8 z-0 cursor-pointer overflow-hidden"
+          onClick={() => setShowConfirm(true)}
+        >
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            className="flex flex-col items-center gap-1"
           >
-            <div className="text-white">
-              <Trash2 size={20} strokeWidth={2.5} />
-            </div>
-          </div>
+            <Trash2 size={20} className="text-white" />
+            <span className="text-[8px] font-bold text-white uppercase tracking-tighter">Delete</span>
+          </motion.div>
         </div>
 
-        {/* Foreground Content (Swipeable) */}
+        {/* Draggable Row content */}
         <motion.div
           drag="x"
-          dragConstraints={{ left: -100, right: 0 }}
-          dragElastic={0.15}
+          dragConstraints={{ left: -80, right: 0 }}
+          dragElastic={0.2}
           onDragEnd={(e, info) => {
-            if (info.offset.x < -70) {
+            if (info.offset.x < -60) {
               setShowConfirm(true);
             }
           }}
-          className="relative z-10 w-full flex justify-center"
+          className="relative z-10 w-full cursor-grab active:cursor-grabbing"
         >
           <div
-            className="relative w-full max-w-[92%] rounded-2xl px-5 py-4 flex flex-row items-center justify-between group overflow-hidden"
+            className="relative w-full max-w-[92%] mx-auto rounded-2xl px-5 py-4 flex flex-row items-center justify-between group overflow-hidden bg-black"
             style={{
               background:  isLent ? 'rgba(255,69,58,0.06)'  : 'rgba(50,215,75,0.06)',
               border:      `1px solid ${isLent ? 'rgba(255,69,58,0.12)' : 'rgba(50,215,75,0.12)'}`,
-              backdropFilter: 'blur(10px)',
+              backdropFilter: 'blur(8px)',
             }}
           >
             {/* Metadata: Note & Date */}
@@ -315,9 +319,9 @@ export default function ContactLedger({ profile }) {
   const [deleteLoading,   setDeleteLoading]   = useState(false);
   const [pdfLoading,      setPdfLoading]      = useState(false);
 
-  const [search, setSearch]       = useState('');
-  const [filter, setFilter]       = useState('all');
-  const [sort,   setSort]         = useState('date_desc');
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [sort,   setSort]   = useState('date_desc');
   const [timeframe, setTimeframe] = useState('all');
   const [customRange, setCustomRange] = useState({ start: '', end: '' });
 
@@ -338,41 +342,34 @@ export default function ContactLedger({ profile }) {
       );
     }
 
-    // 2. Filter by Type
+    // 2. Type Filter
     if (filter === 'lent')     list = list.filter(tx => tx.type === TX_TYPE.LENT);
     if (filter === 'received') list = list.filter(tx => tx.type === TX_TYPE.RECEIVED);
 
-    // 3. Filter by Timeframe
+    // 3. Timeframe Filter
     if (timeframe !== 'all') {
       const now = new Date();
-      list = list.filter(tx => {
-        const txDate = tx.date?.toDate?.() || new Date(tx.date);
-        
-        if (timeframe === 'month') {
-          return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
-        }
-        if (timeframe === '30days') {
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(now.getDate() - 30);
-          return txDate >= thirtyDaysAgo;
-        }
-        if (timeframe === 'custom' && customRange.start && customRange.end) {
-          const start = new Date(customRange.start);
-          const end   = new Date(customRange.end);
-          end.setHours(23, 59, 59, 999); // End of day
-          return txDate >= start && txDate <= end;
-        }
-        return true;
-      });
+      if (timeframe === 'month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        list = list.filter(tx => tx.date?.toDate?.() >= startOfMonth);
+      } else if (timeframe === 'days30') {
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        list = list.filter(tx => tx.date?.toDate?.() >= thirtyDaysAgo);
+      } else if (timeframe === 'custom' && customRange.start && customRange.end) {
+        const start = new Date(customRange.start);
+        const end = new Date(customRange.end);
+        end.setHours(23, 59, 59, 999);
+        list = list.filter(tx => {
+          const d = tx.date?.toDate?.();
+          return d >= start && d <= end;
+        });
+      }
     }
 
     // 4. Sort
     list.sort((a, b) => {
-      const dateA = a.date?.toDate?.() || new Date(a.date);
-      const dateB = b.date?.toDate?.() || new Date(b.date);
-      
-      if (sort === 'date_desc')   return dateB - dateA;
-      if (sort === 'date_asc')    return dateA - dateB;
+      if (sort === 'date_desc') return b.date?.toDate?.() - a.date?.toDate?.();
+      if (sort === 'date_asc')  return a.date?.toDate?.() - b.date?.toDate?.();
       if (sort === 'amount_desc') return b.amount - a.amount;
       return 0;
     });
@@ -388,8 +385,10 @@ export default function ContactLedger({ profile }) {
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
     const signature = 'and hey from Manthan';
     
+    // Scenario A: They owe you (netBalance > 0)
+    // Scenario B: You owe them (netBalance < 0)
     const message = netBalance > 0
-      ? `Hey ${contact.name}, just keeping our records synced. Your current pending balance is ₹${absAmt}. You can settle it via my UPI here: ${profile?.upiId ?? '[UPI ID]'}. ${signature}`
+      ? `Hey ${contact.name}, just keeping our records synced. Your current pending balance is ₹${absAmt}. You can settle it via my UPI here: ${profile?.upiId ?? 'my UPI'}. ${signature}`
       : `Hey ${contact.name}, just keeping our records synced. My ledger shows I currently owe you ₹${absAmt}. I will settle this soon! ${signature}`;
 
     window.open(buildWhatsAppUrl(contact.phone, message), '_blank');
@@ -402,9 +401,8 @@ export default function ContactLedger({ profile }) {
 
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
     const signature = 'and hey from Manthan';
-    
     const message = netBalance > 0
-      ? `Hey ${contact.name}, just keeping our records synced. Your current pending balance is ₹${absAmt}. You can settle it via my UPI here: ${profile?.upiId ?? '[UPI ID]'}. ${signature}`
+      ? `Hey ${contact.name}, just keeping our records synced. Your current pending balance is ₹${absAmt}. You can settle it via my UPI here: ${profile?.upiId ?? 'my UPI'}. ${signature}`
       : `Hey ${contact.name}, just keeping our records synced. My ledger shows I currently owe you ₹${absAmt}. I will settle this soon! ${signature}`;
     
     window.open(`sms:${contact.phone}&body=${encodeURIComponent(message)}`, '_self');
@@ -416,7 +414,7 @@ export default function ContactLedger({ profile }) {
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
     const signature = 'and hey from Manthan';
     const message = netBalance > 0
-      ? `Hey ${contact.name}, just keeping our records synced. Your current pending balance is ₹${absAmt}. You can settle it via my UPI here: ${profile?.upiId ?? '[UPI ID]'}. ${signature}`
+      ? `Hey ${contact.name}, just keeping our records synced. Your current pending balance is ₹${absAmt}. You can settle it via my UPI here: ${profile?.upiId ?? 'my UPI'}. ${signature}`
       : `Hey ${contact.name}, just keeping our records synced. My ledger shows I currently owe you ₹${absAmt}. I will settle this soon! ${signature}`;
     window.open(buildWhatsAppUrl(phone, message), '_blank');
   }, [contact, netBalance, profile]);
@@ -462,36 +460,58 @@ export default function ContactLedger({ profile }) {
     <div className="flex flex-col min-h-full">
 
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="px-6 pt-2 pb-6 flex flex-col items-center justify-center gap-2 text-center">
-        {/* Name (Top) */}
-        <motion.p
-          initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-          className="text-xl text-[#8E8E93] font-medium tracking-wide"
-        >
-          {contact?.name}
-        </motion.p>
-
-        {/* Net balance (Bottom) */}
-        <AmountDisplay
-          value={netBalance}
-          showSign={true}
-          colored={true}
-          ghostIndex={0}
-          className="text-5xl md:text-6xl font-bold tracking-[-0.03em]"
+      <div className="px-6 pt-2 pb-6 flex flex-col items-center justify-center text-center gap-2">
+        {/* Avatar */}
+        <motion.div
+          onClick={() => setShowEditModal(true)}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1,   opacity: 1 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+          className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto cursor-pointer"
           style={{
-            textShadow: isGhostMode ? 'none'
-              : isPositive ? '0 0 40px rgba(50,215,75,0.35)'
-              : isNegative ? '0 0 40px rgba(255,69,58,0.35)'
-              : 'none',
+            background: isPositive ? 'rgba(50,215,75,0.12)'  : isNegative ? 'rgba(255,69,58,0.12)' : 'rgba(255,255,255,0.06)',
+            border:     `1px solid ${isPositive ? 'rgba(50,215,75,0.25)' : isNegative ? 'rgba(255,69,58,0.25)' : 'rgba(255,255,255,0.1)'}`,
+            color:      isPositive ? '#32D74B' : isNegative ? '#FF453A' : '#8E8E93',
           }}
-        />
+          aria-label="Edit Profile"
+        >
+          {contact?.name?.charAt(0)?.toUpperCase() ?? '?'}
+        </motion.div>
 
-        <p className="text-[#3A3A3C] text-[10px] uppercase tracking-[0.15em] font-bold mt-1">
-          {isPositive ? 'Owes you' : isNegative ? 'You owe' : 'All settled'}
+        {/* Vertical Hierarchy: Name Top, Amount Bottom */}
+        <div className="flex flex-col items-center gap-1">
+          <motion.h1
+            onClick={() => setShowEditModal(true)}
+            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ delay: 0.05, type: 'spring', stiffness: 300, damping: 28 }}
+            className="text-xl text-[#8E8E93] font-medium tracking-wide cursor-pointer"
+          >
+            {contact?.name}
+          </motion.h1>
+
+          <AmountDisplay
+            value={netBalance}
+            showSign={true}
+            colored={true}
+            ghostIndex={0}
+            className="text-5xl md:text-6xl font-bold tracking-tight"
+            style={{
+              textShadow: isGhostMode ? 'none'
+                : isPositive ? '0 0 40px rgba(50,215,75,0.35)'
+                : isNegative ? '0 0 40px rgba(255,69,58,0.35)'
+                : 'none',
+            }}
+          />
+        </div>
+
+        <p className="text-[#3A3A3C] text-xs mt-0.5">
+          {isPositive ? 'owes you' : isNegative ? 'you owe' : 'all settled'}
           {transactions.length > 0 && ` · ${transactions.length} entries`}
         </p>
 
-        {/* Action pills */}
+        {/* ── Action pills ──────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, type: 'spring', stiffness: 280, damping: 28 }}
@@ -563,7 +583,7 @@ export default function ContactLedger({ profile }) {
           sortOptions={LEDGER_SORTS}
           activeSort={sort}
           onSortChange={setSort}
-          timeframeOptions={LEDGER_TIMEFRAMES}
+          timeframeOptions={TIME_FILTERS}
           activeTimeframe={timeframe}
           onTimeframeChange={setTimeframe}
           customRange={customRange}
@@ -578,9 +598,9 @@ export default function ContactLedger({ profile }) {
           className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center"
         >
           <p className="text-[#3A3A3C] text-sm">No matches found</p>
-          {(search || filter !== 'all') && (
+          {(search || filter !== 'all' || timeframe !== 'all') && (
             <button 
-              onClick={() => { setSearch(''); setFilter('all'); }}
+              onClick={() => { setSearch(''); setFilter('all'); setTimeframe('all'); }}
               className="text-[#32D74B] text-xs font-medium mt-1 cursor-pointer"
             >
               Clear filters
