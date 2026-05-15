@@ -167,24 +167,17 @@ function TimelineEntry({ tx, ghostIndex }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-        className="relative flex flex-col items-center justify-center w-full px-4 py-1.5"
+        className="relative w-full rounded-2xl overflow-hidden mb-2 px-4"
       >
-        {/* Swipe-to-delete Crimson Nebula Layer (Background) */}
+        {/* Background (Trash Layer) - Masked by foreground glass until swipe */}
         <div 
-          className="absolute inset-y-1.5 inset-x-4 bg-[#FF453A] flex items-center justify-end px-8 z-0 cursor-pointer overflow-hidden rounded-2xl"
+          className="absolute inset-0 bg-[#FF453A] flex justify-end items-center px-10 z-0 cursor-pointer"
           onClick={() => setShowConfirm(true)}
         >
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            className="flex flex-col items-center gap-1"
-          >
-            <Trash2 size={20} className="text-white" />
-            <span className="text-[8px] font-bold text-white uppercase tracking-tighter">Delete</span>
-          </motion.div>
+          <Trash2 size={20} className="text-white" />
         </div>
 
-        {/* Draggable Row content (Foreground - Liquid Smoked Glass) */}
+        {/* Foreground (Liquid Smoked Glass Content) */}
         <motion.div
           drag="x"
           dragConstraints={{ left: -80, right: 0 }}
@@ -194,9 +187,9 @@ function TimelineEntry({ tx, ghostIndex }) {
               setShowConfirm(true);
             }
           }}
-          className="relative z-10 w-full px-6 py-4 flex flex-row justify-between items-center cursor-grab active:cursor-grabbing bg-[#0a0a0a]/80 backdrop-blur-2xl rounded-2xl border border-white/5 shadow-lg"
+          className="relative z-10 w-full p-4 flex flex-row justify-between items-center cursor-grab active:cursor-grabbing bg-white/5 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-lg"
         >
-          {/* Left Side: Metadata (Date & Note) */}
+          {/* Left Side: Metadata (Date & Note) - Strictly Space Gray / Off-white */}
           <div className="flex flex-col items-start gap-1 max-w-[70%]">
             <p className="text-[#8E8E93] text-[10px] uppercase tracking-[0.14em] font-bold">
               {formatRelativeDate(tx.date)}
@@ -212,7 +205,7 @@ function TimelineEntry({ tx, ghostIndex }) {
             )}
           </div>
 
-          {/* Right Side: Hero Amount */}
+          {/* Right Side: Hero Amount - Semantic Red/Green */}
           <div className="flex flex-col items-end text-right ml-4">
             <AmountDisplay
               value={isLent ? -tx.amount : tx.amount}

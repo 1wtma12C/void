@@ -112,9 +112,6 @@ function HeroBalance({ globalNetBalance, txCount }) {
           ? `You are owed this amount`
           : `You owe this amount`
         }
-        {txCount > 0 && (
-          <span className="ml-1.5 text-[#2A2A2C]">· {txCount} entries</span>
-        )}
       </p>
 
       {/* Status pill */}
