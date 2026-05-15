@@ -235,11 +235,6 @@ export default function Layout({ children }) {
               onClick={() => openModal(TX_TYPE.LENT, currentContact)}
             />
 
-            {/* Center: Cmd+K hint (desktop only) */}
-            <span className="hidden md:block text-[10px] text-[#3A3A3C] font-mono select-none">
-              ⌘K
-            </span>
-
             <DockFAB
               type={TX_TYPE.RECEIVED}
               onClick={() => openModal(TX_TYPE.RECEIVED, currentContact)}

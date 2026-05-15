@@ -62,7 +62,7 @@ export function useTransactions() {
   const [error,           setError]           = useState(null);
 
   // Derived active transactions
-  const transactions = useMemo(() => allTransactions.filter((tx) => !tx.deletedAt), [allTransactions]);
+  const transactions = useMemo(() => allTransactions.filter((tx) => !tx.isDeleted && !tx.deletedAt), [allTransactions]);
 
   // Real-time listener — sorted newest first
   useEffect(() => {
@@ -201,6 +201,7 @@ export function useTransactions() {
       amount:    Math.abs(Number(data.amount)),     // always positive
       type:      data.type,
       note:      data.note?.trim() ?? '',
+      isDeleted: false,
       date:      data.date
         ? Timestamp.fromDate(data.date)
         : serverTimestamp(),
@@ -212,7 +213,7 @@ export function useTransactions() {
    * @param {string} id
    */
   const softDeleteTransaction = useCallback(async (id) => {
-    await updateDoc(doc(db, COLLECTIONS.TRANSACTIONS, id), { deletedAt: serverTimestamp() });
+    await updateDoc(doc(db, COLLECTIONS.TRANSACTIONS, id), { isDeleted: true, deletedAt: serverTimestamp() });
   }, []);
 
   /**
@@ -220,7 +221,7 @@ export function useTransactions() {
    * @param {string} id
    */
   const restoreTransaction = useCallback(async (id) => {
-    await updateDoc(doc(db, COLLECTIONS.TRANSACTIONS, id), { deletedAt: null });
+    await updateDoc(doc(db, COLLECTIONS.TRANSACTIONS, id), { isDeleted: false, deletedAt: null });
   }, []);
 
   /**

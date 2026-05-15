@@ -44,7 +44,7 @@ export function useContacts() {
   const [error,       setError]       = useState(null);
 
   // Derived active contacts
-  const contacts = allContacts.filter((c) => !c.deletedAt);
+  const contacts = allContacts.filter((c) => !c.isDeleted && !c.deletedAt);
 
   useEffect(() => {
     const q = query(
@@ -83,6 +83,7 @@ export function useContacts() {
       phone:     data.phone?.trim()  ?? '',
       email:     data.email?.trim()  ?? '',
       notes:     data.notes?.trim()  ?? '',
+      isDeleted: false,
       createdAt: serverTimestamp(),
     });
   }, []);
@@ -132,7 +133,7 @@ export function useContacts() {
    */
   const softDeleteContact = useCallback(async (id) => {
     const ref = doc(db, COLLECTIONS.CONTACTS, id);
-    await updateDoc(ref, { deletedAt: serverTimestamp() });
+    await updateDoc(ref, { isDeleted: true, deletedAt: serverTimestamp() });
   }, []);
 
   /**
@@ -141,7 +142,7 @@ export function useContacts() {
    */
   const restoreContact = useCallback(async (id) => {
     const ref = doc(db, COLLECTIONS.CONTACTS, id);
-    await updateDoc(ref, { deletedAt: null });
+    await updateDoc(ref, { isDeleted: false, deletedAt: null });
   }, []);
 
   /**

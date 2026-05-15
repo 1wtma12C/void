@@ -168,10 +168,11 @@ function TimelineEntry({ tx, ghostIndex }) {
         exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
         className="relative w-full rounded-2xl mb-2 overflow-hidden bg-black"
+        style={{ transform: 'translateZ(0)' }}
       >
         {/* Background (Trash Layer) - Strictly Right Anchored */}
         <div 
-          className="absolute right-0 inset-y-0 w-24 bg-[#FF453A] flex justify-center items-center z-0 cursor-pointer"
+          className="absolute right-0 inset-y-0 w-24 bg-[#FF453A] flex justify-center items-center z-0 cursor-pointer rounded-2xl"
           onClick={() => setShowConfirm(true)}
         >
           <Trash2 size={20} className="text-white" />
