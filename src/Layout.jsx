@@ -198,19 +198,7 @@ export default function Layout({ children }) {
 
       {/* ── Scrollable Page Content ─────────────────────────────── */}
       <main
-        className="flex-1 relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24 overflow-visible"abel="Search"
-            className="w-9 h-9 flex items-center justify-center rounded-full cursor-pointer select-none"
-            style={{ background: 'rgba(255,255,255,0.06)' }}
-          >
-            <Search size={16} strokeWidth={2} className="text-[#8E8E93]" />
-          </motion.button>
-        </div>
-      </div>
-    </header>
-
-      {/* ── Scrollable Page Content ─────────────────────────────── */}
-      <main
-        className="flex-1 overflow-y-auto relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24"
+        className="flex-1 relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24 overflow-visible"
         style={{
           paddingTop:    '20px',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 90px)',
