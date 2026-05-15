@@ -225,7 +225,7 @@ export default function Layout({ children }) {
 
       {/* ── Bottom Floating Dock ────────────────────────────────── */}
       {!isVaultPage && (
-        <div className={`fixed left-0 right-0 z-50 flex justify-center pointer-events-none pb-[env(safe-area-inset-bottom)] transition-all duration-300 ease-in-out ${isInputFocused ? 'bottom-0 translate-y-24 opacity-0' : 'bottom-4 md:bottom-8 translate-y-0 opacity-100'}`}>
+        <div className={`fixed left-0 right-0 z-50 flex justify-center pointer-events-none pb-[max(env(safe-area-inset-bottom),8px)] transition-all duration-300 ease-in-out ${isInputFocused ? 'bottom-0 translate-y-24 opacity-0' : 'bottom-2 md:bottom-8 translate-y-0 opacity-100'}`}>
           <nav
             className="pointer-events-auto flex items-center gap-4 px-4 py-2 rounded-full backdrop-blur-2xl bg-white/5 border border-white/10 shadow-2xl w-[90%] max-w-[340px]"
             aria-label="Transaction dock"

@@ -65,11 +65,18 @@
     margin: 0;
   }
 
-  /* Scrollbars — invisible on mobile, ultra-thin on desktop */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  /* Hide scrollbar globally for Chrome, Safari, and Opera */
+  ::-webkit-scrollbar {
+    display: none;
+    width: 0px;
+    background: transparent;
+  }
+
+  /* Hide scrollbar globally for IE, Edge, and Firefox */
+  html, body {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
 
   /* Selection */
   ::selection {
