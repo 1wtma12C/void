@@ -265,17 +265,17 @@ export default function InputModal() {
                   autoFocus={isQuickEntry}
                 />
 
+                <MagnifiedInput
+                  id="unified-note"
+                  icon={AlignLeft}
+                  label="Notes / Description"
+                  value={note}
+                  onChange={setNote}
+                  placeholder="Dinner, rent, trip..."
+                />
+
                 {!isQuickEntry && (
                   <>
-                    <MagnifiedInput
-                      id="unified-note"
-                      icon={AlignLeft}
-                      label="Notes / Description"
-                      value={note}
-                      onChange={setNote}
-                      placeholder="Dinner, rent, trip..."
-                    />
-
                     <MagnifiedInput
                       id="unified-phone"
                       icon={Phone}
