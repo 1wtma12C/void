@@ -186,7 +186,7 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
 
       {/* Avatar circle */}
       <div
-        className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-semibold mb-3 shadow-inner"
+        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold mb-2 shadow-inner"
         style={{
           background: isPositive
             ? 'rgba(50,215,75,0.12)'
@@ -200,7 +200,7 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
       </div>
 
       {/* Name */}
-      <p className="text-lg text-gray-300 mb-1 font-medium tracking-tight truncate w-full group-hover:text-white transition-colors">
+      <p className="text-xs text-gray-300 mb-1 font-medium tracking-tight truncate w-full group-hover:text-white transition-colors">
         {displayName}
       </p>
 
@@ -210,7 +210,7 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
         showSign={true}
         colored={true}
         ghostIndex={ghostIndex}
-        className="text-2xl font-bold break-words w-full text-center leading-none"
+        className="text-lg md:text-2xl font-bold truncate w-full text-center leading-none"
       />
     </motion.div>
   );
@@ -395,7 +395,7 @@ export default function Dashboard({ profile }) {
           {oweYou.length > 0 && (
             <section aria-label="People who owe you">
               <Divider label={`Owed to you · ${oweYou.length}`} />
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full max-w-7xl mx-auto px-4">
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-6 w-full flex-1">
                 {oweYou.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
@@ -413,7 +413,7 @@ export default function Dashboard({ profile }) {
           {youOwe.length > 0 && (
             <section aria-label="People you owe" className={oweYou.length > 0 ? 'mt-6' : ''}>
               <Divider label={`You owe · ${youOwe.length}`} />
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full max-w-7xl mx-auto px-4">
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-6 w-full flex-1">
                 {youOwe.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
@@ -431,7 +431,7 @@ export default function Dashboard({ profile }) {
           {newEmpty.length > 0 && (
             <section aria-label="Recent contacts" className="mt-6">
               <Divider label="Recently Added" />
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full max-w-7xl mx-auto px-4">
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-6 w-full flex-1">
                 {newEmpty.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}

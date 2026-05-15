@@ -73,6 +73,27 @@ export default function Layout({ children }) {
   const currentContactId = isContactPage ? location.pathname.split('/')[2] : null;
   const currentContact   = contacts.find(c => c.id === currentContactId);
 
+  const [isInputFocused, setIsInputFocused] = useState(false);
+
+  useEffect(() => {
+    const handleFocusIn = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        setIsInputFocused(true);
+      }
+    };
+    const handleFocusOut = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        setIsInputFocused(false);
+      }
+    };
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
   // ── Cmd+K global shortcut ─────────────────────────────────────
   useEffect(() => {
     function handleKeyDown(e) {
@@ -180,7 +201,7 @@ export default function Layout({ children }) {
 
       {/* ── Scrollable Page Content ─────────────────────────────── */}
       <main
-        className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-dvh mx-auto w-full max-w-md flex flex-col items-center justify-center text-center pb-24"
+        className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24"
         style={{
           paddingTop:    'calc(env(safe-area-inset-top)    + 64px)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 90px)',
@@ -204,7 +225,7 @@ export default function Layout({ children }) {
 
       {/* ── Bottom Floating Dock ────────────────────────────────── */}
       {!isVaultPage && (
-        <div className="fixed left-0 right-0 z-50 flex justify-center pointer-events-none bottom-4 pb-[env(safe-area-inset-bottom)] md:bottom-8">
+        <div className={`fixed left-0 right-0 z-50 flex justify-center pointer-events-none pb-[env(safe-area-inset-bottom)] transition-all duration-300 ease-in-out ${isInputFocused ? 'bottom-0 translate-y-24 opacity-0' : 'bottom-4 md:bottom-8 translate-y-0 opacity-100'}`}>
           <nav
             className="pointer-events-auto flex items-center gap-4 px-4 py-2 rounded-full backdrop-blur-2xl bg-white/5 border border-white/10 shadow-2xl w-[90%] max-w-[340px]"
             aria-label="Transaction dock"

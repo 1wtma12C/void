@@ -167,17 +167,17 @@ function TimelineEntry({ tx, ghostIndex }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-        className="relative w-full rounded-2xl mb-2 overflow-hidden bg-transparent"
+        className="relative w-full rounded-2xl mb-2 overflow-hidden bg-black"
       >
         {/* Background (Trash Layer) - Strictly Right Anchored */}
         <div 
-          className="absolute right-0 top-0 bottom-0 w-24 bg-[#FF453A] flex justify-center items-center z-0"
+          className="absolute right-0 inset-y-0 w-24 bg-[#FF453A] flex justify-center items-center z-0 cursor-pointer"
           onClick={() => setShowConfirm(true)}
         >
           <Trash2 size={20} className="text-white" />
         </div>
 
-        {/* Foreground (Liquid Smoked Glass Content) */}
+        {/* Foreground (Solid Apple Surface) */}
         <motion.div
           drag="x"
           dragConstraints={{ left: -80, right: 0 }}
@@ -187,7 +187,7 @@ function TimelineEntry({ tx, ghostIndex }) {
               setShowConfirm(true);
             }
           }}
-          className="relative z-10 w-full p-4 rounded-2xl bg-[#121212]/90 backdrop-blur-2xl border border-white/5 flex flex-row justify-between items-center shadow-lg"
+          className="relative z-10 w-full p-4 rounded-2xl bg-[#1C1C1E] border border-white/5 shadow-lg flex flex-row justify-between items-center cursor-grab active:cursor-grabbing"
         >
           {/* Left Side: Metadata (Date & Note) - Strictly Space Gray / Off-white */}
           <div className="flex flex-col items-start gap-1 max-w-[70%]">
