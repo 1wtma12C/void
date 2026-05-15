@@ -57,11 +57,9 @@ function TypeToggle({ value, onChange }) {
 
 // ── MAIN MODAL ───────────────────────────────────────────────────
 export default function InputModal() {
-  const { isOpen, prefillType, prefillContact, context, closeModal } = useInputModal();
+  const { isOpen, prefillType, prefillContact, closeModal } = useInputModal();
   const { upsertContact, contacts } = useContacts();
   const { addTransaction } = useTransactions();
-
-  const isLedger = context === 'ledger';
 
   // Form State
   const [txType,  setTxType]  = useState(TX_TYPE.LENT);
@@ -90,7 +88,7 @@ export default function InputModal() {
     }
   }, [isOpen, prefillType, prefillContact]);
 
-  const isValid = Number(amount) > 0 && (isLedger || name.trim().length >= 2);
+  const isValid = Number(amount) > 0 && name.trim().length >= 2;
 
   // Contact suggestions
   const [suggestions, setSuggestions] = useState([]);
@@ -126,23 +124,22 @@ export default function InputModal() {
     setError('');
     
     try {
-      let contactId = prefillContact?.id;
+      // 1. Deduplication Logic: Check for exact case-insensitive match
+      const existingContact = contacts.find(c => c.name.toLowerCase() === name.trim().toLowerCase());
+      let contactId;
 
-      if (!isLedger) {
-        // 1. Deduplication Logic: Check for exact case-insensitive match
-        const existingContact = contacts.find(c => c.name.toLowerCase() === name.trim().toLowerCase());
-
-        if (existingContact) {
-          contactId = existingContact.id;
-        } else {
-          // 2. Upsert Contact (returns ID)
-          contactId = await upsertContact({
-            name: name.trim(),
-            phone,
-            email,
-            upiId: upi,
-          });
-        }
+      if (existingContact) {
+        // Use existing contact ID, but maybe update their details if they were empty? 
+        // For simplicity, we just use the ID.
+        contactId = existingContact.id;
+      } else {
+        // 2. Upsert Contact (returns ID)
+        contactId = await upsertContact({
+          name: name.trim(),
+          phone,
+          email,
+          upiId: upi,
+        });
       }
 
       // 3. Add Transaction
@@ -159,7 +156,9 @@ export default function InputModal() {
       setError('Could not record transaction. Check your connection.');
       setLoading(false);
     }
-  }, [amount, name, phone, email, upi, note, txType, loading, isValid, upsertContact, addTransaction, closeModal, contacts, isLedger, prefillContact]);
+  }, [amount, name, phone, email, upi, note, txType, loading, isValid, upsertContact, addTransaction, closeModal, contacts]);
+
+  const isQuickEntry = !!prefillContact;
 
   return (
     <AnimatePresence>
@@ -189,14 +188,14 @@ export default function InputModal() {
               borderRadius:  '28px 28px 0 0',
               paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)',
               maxHeight:     '92dvh',
-              height: isLedger ? 'auto' : '92dvh',
+              overflow:      'hidden'
             }}
           >
             {/* Handle + header */}
             <div className="flex flex-col items-center justify-center pt-4 pb-2 w-full flex-shrink-0 relative">
               <div className="w-8 h-0.5 rounded-full bg-white/20 mb-3" />
               <p className="text-[#F5F5F7] text-base font-semibold tracking-tight">
-                {isLedger ? 'Quick Entry' : 'New Entry'}
+                {isQuickEntry ? `Entry for ${prefillContact.name}` : 'New Entry'}
               </p>
               <motion.button
                 onClick={closeModal}
@@ -209,12 +208,12 @@ export default function InputModal() {
               </motion.button>
             </div>
 
-            {/* Body */}
-            <div className={`flex-1 ${isLedger ? '' : 'overflow-y-auto'} px-6 pt-4 pb-6 w-full flex flex-col items-center`}>
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto px-6 pt-4 pb-6 w-full flex flex-col items-center">
               
               <TypeToggle value={txType} onChange={setTxType} />
               
-              {!isLedger && (
+              {!isQuickEntry && (
                 <div className="w-full flex flex-col gap-5 max-w-sm mx-auto mb-6 relative">
                   <MagnifiedInput
                     id="unified-name"
@@ -263,10 +262,10 @@ export default function InputModal() {
                   value={amount}
                   onChange={setAmount}
                   placeholder="0"
-                  autoFocus={isLedger}
+                  autoFocus={isQuickEntry}
                 />
 
-                {!isLedger && (
+                {!isQuickEntry && (
                   <>
                     <MagnifiedInput
                       id="unified-note"
@@ -329,7 +328,7 @@ export default function InputModal() {
               >
                 {loading
                   ? <><Loader2 size={16} className="animate-spin" /> Saving…</>
-                  : <><Check size={16} strokeWidth={2.5} /> {isLedger ? 'Confirm Entry' : 'Save Log'}</>
+                  : <><Check size={16} strokeWidth={2.5} /> Save Log</>
                 }
               </motion.button>
             </div>

@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Lock, ArrowLeft, Trash2, RefreshCw, User } from 'lucide-react';
+import { Lock, ArrowLeft, Trash2, RefreshCw, User, Delete } from 'lucide-react';
 
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useContacts } from '../hooks/useContacts';
 import { useTransactions, TX_TYPE } from '../hooks/useTransactions';
 import MagnifiedInput from '../components/ui/MagnifiedInput';
+import ConfirmModal from '../components/modals/ConfirmModal';
 
 // ── Vault Dashboard ───────────────────────────────────────────────
 function VaultDashboard() {
@@ -15,9 +16,10 @@ function VaultDashboard() {
   const { allContacts, restoreContact, hardDeleteContact } = useContacts();
   const { allTransactions, restoreTransaction, hardDeleteTransaction } = useTransactions();
 
-  // Filter only deleted items
-  const deletedContacts = allContacts.filter(c => c.deletedAt);
-  const deletedTxs      = allTransactions.filter(t => t.deletedAt);
+  const deletedTxs = useMemo(() => 
+    allTransactions.filter(tx => !!tx.deletedAt), 
+    [allTransactions]
+  );
 
   // Profile Form State
   const [name, setName]   = useState(profile?.name ?? '');
@@ -29,7 +31,10 @@ function VaultDashboard() {
   const [currentPinInput, setCurrentPinInput] = useState('');
   const [newPinInput, setNewPinInput] = useState('');
   const [pinError, setPinError] = useState('');
-  const [confirmItem, setConfirmItem] = useState(null);
+
+  // Confirm Modal state
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [confirmType, setConfirmType] = useState(null); // 'contact' | 'tx'
 
   const handleSaveProfile = async () => {
     await saveProfile({ name, phone, upiId: upi });
@@ -56,6 +61,21 @@ function VaultDashboard() {
         setPinError('New password must be 4 digits.');
       }
     }
+  };
+
+  const closeConfirm = () => {
+    setConfirmDeleteId(null);
+    setConfirmType(null);
+  };
+
+  const handleHardDelete = async () => {
+    if (!confirmDeleteId) return;
+    if (confirmType === 'contact') {
+      await hardDeleteContact(confirmDeleteId);
+    } else {
+      await hardDeleteTransaction(confirmDeleteId);
+    }
+    closeConfirm();
   };
 
   return (
@@ -136,27 +156,30 @@ function VaultDashboard() {
       )}
 
       {activeTab === 'recycle' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-8 w-full text-left">
-          
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-8 pb-12">
+          {/* Contacts Section */}
           <section>
-            <p className="text-[11px] font-semibold tracking-widest uppercase text-[#8E8E93] mb-3 text-center">
+            <p className="text-[10px] font-semibold tracking-[0.14em] uppercase text-[#3A3A3C] mb-4 text-center">
               Deleted Contacts
             </p>
-            {deletedContacts.length === 0 ? (
+            {allContacts.filter(c => c.isDeleted).length === 0 ? (
               <p className="text-center text-[#3A3A3C] text-sm">No deleted contacts.</p>
             ) : (
               <div className="flex flex-col gap-2">
-                {deletedContacts.map(c => (
+                {allContacts.filter(c => c.isDeleted).map(c => (
                   <div key={c.id} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.04] border border-white/[0.06]">
                     <div>
-                      <p className="text-[#F5F5F7] font-medium text-sm">{c.name}</p>
-                      <p className="text-[#8E8E93] text-[10px]">Deleted: {c.deletedAt?.toDate().toLocaleDateString()}</p>
+                      <p className="text-[#F5F5F7] font-semibold text-sm">{c.name}</p>
+                      <p className="text-[#8E8E93] text-[10px]">{c.phone || 'No phone'}</p>
                     </div>
                     <div className="flex gap-3">
-                      <button onClick={() => restoreContact(c.id)} className="text-[#32D74B] p-2 bg-[#32D74B]/10 rounded-full" aria-label="Restore">
+                      <button onClick={() => restoreContact(c.id)} className="text-[#32D74B] p-2 bg-[#32D74B]/10 rounded-full">
                         <RefreshCw size={14} />
                       </button>
-                      <button onClick={() => setConfirmItem({ type: 'contact', action: 'delete', id: c.id })} className="text-[#FF453A] p-2 bg-[#FF453A]/10 rounded-full" aria-label="Permanent Delete">
+                      <button 
+                        onClick={() => { setConfirmDeleteId(c.id); setConfirmType('contact'); }} 
+                        className="text-[#FF453A] p-2 bg-[#FF453A]/10 rounded-full"
+                      >
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -166,8 +189,9 @@ function VaultDashboard() {
             )}
           </section>
 
+          {/* Transactions Section */}
           <section>
-            <p className="text-[11px] font-semibold tracking-widest uppercase text-[#8E8E93] mb-3 text-center">
+            <p className="text-[10px] font-semibold tracking-[0.14em] uppercase text-[#3A3A3C] mb-4 text-center">
               Deleted Transactions
             </p>
             {deletedTxs.length === 0 ? (
@@ -189,7 +213,10 @@ function VaultDashboard() {
                         <button onClick={() => restoreTransaction(t.id)} className="text-[#32D74B] p-2 bg-[#32D74B]/10 rounded-full">
                           <RefreshCw size={14} />
                         </button>
-                        <button onClick={() => setConfirmItem({ type: 'transaction', action: 'delete', id: t.id })} className="text-[#FF453A] p-2 bg-[#FF453A]/10 rounded-full">
+                        <button 
+                          onClick={() => { setConfirmDeleteId(t.id); setConfirmType('tx'); }} 
+                          className="text-[#FF453A] p-2 bg-[#FF453A]/10 rounded-full"
+                        >
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -200,26 +227,17 @@ function VaultDashboard() {
             )}
           </section>
 
-          {/* Custom Confirm Modal for Recycle Bin */}
-          <ConfirmModal
-            isOpen={!!confirmItem}
-            title={confirmItem?.action === 'delete' ? 'Permanently Delete?' : 'Restore Item?'}
-            message={confirmItem?.action === 'delete' 
-              ? 'This action cannot be undone. The data will be erased from the void forever.'
-              : 'This will move the entry back to your active ledger.'
+          <ConfirmModal 
+            isOpen={!!confirmDeleteId}
+            title={confirmType === 'contact' ? "Delete Contact?" : "Wipe Entry?"}
+            message={confirmType === 'contact' 
+              ? "This will permanently delete the contact and all their transaction history. This cannot be undone."
+              : "This will permanently delete this transaction record. This action cannot be undone."
             }
-            confirmText={confirmItem?.action === 'delete' ? 'Erase Forever' : 'Restore'}
-            isDestructive={confirmItem?.action === 'delete'}
-            onConfirm={async () => {
-              if (confirmItem.type === 'contact') {
-                await hardDeleteContact(confirmItem.id);
-              } else {
-                await hardDeleteTransaction(confirmItem.id);
-              }
-              setConfirmItem(null);
-            }}
-            onCancel={() => setConfirmItem(null)}
+            onConfirm={handleHardDelete}
+            onCancel={closeConfirm}
           />
+
         </motion.div>
       )}
     </div>
@@ -261,12 +279,13 @@ export default function AdminVault() {
   return (
     <div className="flex flex-col min-h-dvh w-full max-w-md mx-auto relative">
       
-      {/* Header (Only show if authenticated or specifically as an exit) */}
+      {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
         <button onClick={() => navigate('/')} className="text-[#8E8E93] p-2 -ml-2" aria-label="Go back">
           <ArrowLeft size={20} />
         </button>
         
+        {/* Central VOID Logo (Exit Button) */}
         <motion.span
           onClick={() => {
             setIsAuthenticated(false);
@@ -278,7 +297,7 @@ export default function AdminVault() {
           VOID
         </motion.span>
 
-        <div className="w-8" />
+        <div className="w-8" /> {/* Spacer */}
       </div>
 
       <AnimatePresence mode="wait">
@@ -307,7 +326,7 @@ export default function AdminVault() {
             </motion.div>
 
             {/* Keypad */}
-            <div className="grid grid-cols-3 gap-y-6 gap-x-12 w-full max-w-[280px] mb-8">
+            <div className="grid grid-cols-3 gap-y-6 gap-x-12 w-full max-w-[280px]">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                 <button
                   key={num}
@@ -317,34 +336,37 @@ export default function AdminVault() {
                   {num}
                 </button>
               ))}
-              <div />
+              
+              {/* Cancel Button (Left of zero) */}
+              <button
+                onClick={() => navigate('/')}
+                className="w-16 h-16 rounded-full text-[13px] font-semibold text-[#8E8E93] bg-transparent hover:bg-white/[0.05] active:bg-white/10 transition-colors mx-auto flex items-center justify-center"
+              >
+                Cancel
+              </button>
+
               <button
                 onClick={() => handleKeyPress('0')}
                 className="w-16 h-16 rounded-full text-2xl font-medium text-[#F5F5F7] bg-transparent hover:bg-white/[0.05] active:bg-white/10 transition-colors mx-auto flex items-center justify-center"
               >
                 0
               </button>
+
+              {/* Back button (Right of zero) */}
               <button
                 onClick={handleBackspace}
                 className="w-16 h-16 rounded-full flex items-center justify-center text-[#8E8E93] bg-transparent hover:bg-white/[0.05] active:bg-white/10 transition-colors mx-auto"
               >
-                <ArrowLeft size={24} />
+                <Delete size={22} />
               </button>
             </div>
-
-            <button
-              onClick={() => navigate('/')}
-              className="text-[#8E8E93] text-sm font-medium hover:text-white transition-colors"
-            >
-              [ Cancel ]
-            </button>
           </motion.div>
         ) : (
           <motion.div
             key="dashboard"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
+            exit={{ opacity: 0, y: -10 }}
             className="flex-1 flex flex-col w-full"
           >
             <VaultDashboard />

@@ -22,18 +22,15 @@ export function InputModalProvider({ children }) {
   const [isOpen,         setIsOpen]         = useState(false);
   const [prefillType,    setPrefillType]    = useState(null);
   const [prefillContact, setPrefillContact] = useState(null);
-  const [context,        setContext]        = useState('home'); // 'home' | 'ledger'
 
   /**
    * Open the input modal.
    * @param {'LENT'|'RECEIVED'|null}        type    — pre-select transaction type
    * @param {{ id: string, name: string }|null} contact — pre-select a contact
-   * @param {'home'|'ledger'}               ctx     — context of the entry
    */
-  const openModal = useCallback((type = null, contact = null, ctx = 'home') => {
+  const openModal = useCallback((type = null, contact = null) => {
     setPrefillType(type);
     setPrefillContact(contact);
-    setContext(ctx);
     setIsOpen(true);
     // Prevent body scroll while modal is open
     document.body.classList.add('no-scroll');
@@ -45,14 +42,13 @@ export function InputModalProvider({ children }) {
     setTimeout(() => {
       setPrefillType(null);
       setPrefillContact(null);
-      setContext('home');
       document.body.classList.remove('no-scroll');
     }, 300);
   }, []);
 
   return (
     <InputModalContext.Provider
-      value={{ isOpen, prefillType, prefillContact, context, openModal, closeModal }}
+      value={{ isOpen, prefillType, prefillContact, openModal, closeModal }}
     >
       {children}
     </InputModalContext.Provider>

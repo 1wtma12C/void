@@ -14,7 +14,7 @@
  *   • All amounts respect Ghost Mode (blur)
  */
 
-import { useMemo }          from 'react';
+import { useMemo, useState }  from 'react';
 import { useNavigate }      from 'react-router-dom';
 import { motion }           from 'framer-motion';
 import { UserPlus, TrendingUp, TrendingDown, Minus, Zap } from 'lucide-react';
@@ -25,9 +25,22 @@ import { useInputModal }    from '../contexts/InputModalContext';
 import { useGhost }         from '../contexts/GhostContext';
 import AmountDisplay, { formatCurrency } from '../components/ui/AmountDisplay';
 import { formatRelativeDate } from '../lib/utils';
+import { SearchFilter } from '../components/ui';
 
 // ── Constants ────────────────────────────────────────────────────
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+const DASHBOARD_FILTERS = [
+  { id: 'all',     label: 'All Contacts' },
+  { id: 'owe_me',  label: 'Owe Me' },
+  { id: 'i_owe',   label: 'I Owe' },
+  { id: 'settled', label: 'Settled' },
+];
+
+const DASHBOARD_SORTS = [
+  { id: 'balance_desc', label: 'Highest Balance' },
+  { id: 'balance_asc',  label: 'Lowest Balance' },
+];
 
 // ── Animation variants ────────────────────────────────────────────
 const containerVariants = {
@@ -77,12 +90,12 @@ function HeroBalance({ globalNetBalance, txCount }) {
         )}
 
         <AmountDisplay
-          amount={globalNetBalance}
+          value={globalNetBalance}
           showSign={true}
           colored={true}
-          className="font-bold tracking-[-0.04em] leading-none"
+          ghostIndex={0}
+          className="text-6xl md:text-8xl font-bold tracking-tighter leading-none"
           style={{
-            fontSize: 'clamp(3rem, 14vw, 5.5rem)',
             textShadow: isGhostMode ? 'none'
               : isPositive ? '0 0 60px rgba(50,215,75,0.4)'
               : isNegative ? '0 0 60px rgba(255,69,58,0.4)'
@@ -90,7 +103,7 @@ function HeroBalance({ globalNetBalance, txCount }) {
           }}
         />
       </div>
-
+      
       {/* Subtitle */}
       <p className="text-[#3A3A3C] text-xs mt-3 tracking-tight">
         {isZero
@@ -140,7 +153,7 @@ function Divider({ label }) {
 }
 
 // ── Contact Card (Matrix Tile) ────────────────────────────────────
-function ContactCard({ contact, balance, lastTxDate }) {
+function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
   const navigate = useNavigate();
   const { isGhostMode } = useGhost();
 
@@ -190,10 +203,11 @@ function ContactCard({ contact, balance, lastTxDate }) {
       {/* Balance */}
       <div className="flex flex-col items-center mt-auto">
         <AmountDisplay
-          amount={balance}
+          value={balance}
           showSign={true}
           colored={true}
-          className="text-[13px] font-bold tabular-nums tracking-tight leading-none"
+          ghostIndex={ghostIndex}
+          className="text-[13px] font-bold tracking-tight leading-none"
         />
       </div>
     </motion.div>
@@ -265,13 +279,17 @@ export default function Dashboard({ profile }) {
   const { openModal } = useInputModal();
   const navigate      = useNavigate();
 
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [sort,   setSort]   = useState('balance_desc');
+
   const isLoading = contactsLoading || txLoading;
 
   // ── Build the visible contact list ────────────────────────────
   const visibleContacts = useMemo(() => {
     const now = Date.now();
 
-    return contacts
+    let list = contacts
       .map((contact) => {
         const balance    = getContactBalance(contact.id);
         const contactTxs = getContactTransactions(contact.id);
@@ -282,12 +300,28 @@ export default function Dashboard({ profile }) {
         const isNew      = (now - createdAt) < TWENTY_FOUR_HOURS;
 
         return { contact, balance, lastTxDate: lastTx?.date ?? null, isNew };
-      })
-      // Show if balance !== 0, OR if contact was created in the last 24h
-      .filter(({ balance, isNew }) => balance !== 0 || isNew)
-      // Sort: non-zero balances first (by absolute value desc), then new ones
-      .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance));
-  }, [contacts, getContactBalance, getContactTransactions]);
+      });
+
+    // 1. Search Filter
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(item => item.contact.name.toLowerCase().includes(q));
+    }
+
+    // 2. Dropdown Filter
+    if (filter === 'owe_me')  list = list.filter(item => item.balance > 0);
+    if (filter === 'i_owe')   list = list.filter(item => item.balance < 0);
+    if (filter === 'settled') list = list.filter(item => item.balance === 0);
+
+    // 3. Sorting
+    list.sort((a, b) => {
+      if (sort === 'balance_desc') return Math.abs(b.balance) - Math.abs(a.balance);
+      if (sort === 'balance_asc')  return Math.abs(a.balance) - Math.abs(b.balance);
+      return 0;
+    });
+
+    return list;
+  }, [contacts, getContactBalance, getContactTransactions, search, filter, sort]);
 
   // Segregate by direction
   const oweYou   = visibleContacts.filter(({ balance }) => balance > 0);
@@ -328,6 +362,21 @@ export default function Dashboard({ profile }) {
         txCount={transactions.length}
       />
 
+      {/* ── Search & Filter ──────────────────────────────────── */}
+      {hasContacts && (
+        <SearchFilter
+          placeholder="Search contacts..."
+          value={search}
+          onChange={setSearch}
+          filterOptions={DASHBOARD_FILTERS}
+          activeFilter={filter}
+          onFilterChange={setFilter}
+          sortOptions={DASHBOARD_SORTS}
+          activeSort={sort}
+          onSortChange={setSort}
+        />
+      )}
+
       {/* ── Contact Orbit ─────────────────────────────────────── */}
       {!hasContacts ? (
         <EmptyState openModal={openModal} />
@@ -345,12 +394,13 @@ export default function Dashboard({ profile }) {
             <section aria-label="People who owe you">
               <Divider label={`Owed to you · ${oweYou.length}`} />
               <div className="grid grid-cols-3 gap-3 px-6">
-                {oweYou.map(({ contact, balance, lastTxDate }) => (
+                {oweYou.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
                     contact={contact}
                     balance={balance}
                     lastTxDate={lastTxDate}
+                    ghostIndex={index + 1}
                   />
                 ))}
               </div>
@@ -362,12 +412,13 @@ export default function Dashboard({ profile }) {
             <section aria-label="People you owe" className={oweYou.length > 0 ? 'mt-6' : ''}>
               <Divider label={`You owe · ${youOwe.length}`} />
               <div className="grid grid-cols-3 gap-3 px-6">
-                {youOwe.map(({ contact, balance, lastTxDate }) => (
+                {youOwe.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
                     contact={contact}
                     balance={balance}
                     lastTxDate={lastTxDate}
+                    ghostIndex={oweYou.length + index + 1}
                   />
                 ))}
               </div>
@@ -379,12 +430,13 @@ export default function Dashboard({ profile }) {
             <section aria-label="Recent contacts" className="mt-6">
               <Divider label="Recently Added" />
               <div className="grid grid-cols-3 gap-3 px-6">
-                {newEmpty.map(({ contact, balance, lastTxDate }) => (
+                {newEmpty.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
                     contact={contact}
                     balance={balance}
                     lastTxDate={lastTxDate}
+                    ghostIndex={oweYou.length + youOwe.length + index + 1}
                   />
                 ))}
               </div>
@@ -392,6 +444,8 @@ export default function Dashboard({ profile }) {
           )}
         </motion.div>
       )}
+
+      {/* ── Add Contact shortcut — REMOVED (Redundant with floating dock) ── */}
     </div>
   );
 }

@@ -41,8 +41,8 @@ function DockFAB({ type, onClick }) {
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       aria-label={isLent ? 'Record a loan (Lend)' : 'Record a receipt (Receive)'}
       className={[
-        'flex items-center gap-2 rounded-pill font-semibold text-sm',
-        'px-5 py-3 select-none cursor-pointer border',
+        'flex-1 flex items-center justify-center gap-2 rounded-pill font-semibold text-sm',
+        'px-5 py-3 select-none cursor-pointer border min-w-[120px]',
         'backdrop-blur-glass transition-all duration-150',
         isLent
           ? 'bg-[#FF453A]/15 border-[#FF453A]/25 text-[#FF453A]'
@@ -198,26 +198,31 @@ export default function Layout({ children }) {
         </AnimatePresence>
       </main>
 
-      {/* ── Bottom Dock ────────────────────────────────────────── */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center gap-4 pb-safe pt-4 bg-black/40 backdrop-blur-xl border-t border-white/10"
-        aria-label="Transaction dock"
-      >
-        <DockFAB
-          type={TX_TYPE.LENT}
-          onClick={() => openModal(TX_TYPE.LENT, currentContact, isContactPage ? 'ledger' : 'home')}
-        />
+      {/* ── Bottom Floating Dock ────────────────────────────────── */}
+      <div className="fixed bottom-0 left-0 right-0 pb-safe pt-4 pointer-events-none flex justify-center z-50">
+        <nav
+          className="pointer-events-auto flex items-center gap-4 px-4 py-2 rounded-full backdrop-blur-2xl bg-white/5 border border-white/10 mb-6 shadow-2xl w-[90%] max-w-[340px]"
+          style={{
+            marginBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
+          }}
+          aria-label="Transaction dock"
+        >
+          <DockFAB
+            type={TX_TYPE.LENT}
+            onClick={() => openModal(TX_TYPE.LENT, currentContact)}
+          />
 
-        {/* Center: Cmd+K hint (desktop only) */}
-        <span className="hidden md:block text-[10px] text-[#3A3A3C] font-mono select-none">
-          ⌘K
-        </span>
+          {/* Center: Cmd+K hint (desktop only) */}
+          <span className="hidden md:block text-[10px] text-[#3A3A3C] font-mono select-none">
+            ⌘K
+          </span>
 
-        <DockFAB
-          type={TX_TYPE.RECEIVED}
-          onClick={() => openModal(TX_TYPE.RECEIVED, currentContact, isContactPage ? 'ledger' : 'home')}
-        />
-      </nav>
+          <DockFAB
+            type={TX_TYPE.RECEIVED}
+            onClick={() => openModal(TX_TYPE.RECEIVED, currentContact)}
+          />
+        </nav>
+      </div>
 
       {/* Global Search Modal */}
       <Suspense fallback={null}>

@@ -6,7 +6,7 @@
  *           double-entry timeline, delete transaction.
  */
 
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence }        from 'framer-motion';
 import {
@@ -20,9 +20,22 @@ import { useUserProfile }            from '../hooks/useUserProfile';
 import { useInputModal }             from '../contexts/InputModalContext';
 import { useGhost }                  from '../contexts/GhostContext';
 import { formatDate, formatRelativeDate, buildWhatsAppUrl } from '../lib/utils';
-import MagnifiedInput from '../components/ui/MagnifiedInput';
+import { MagnifiedInput, AmountDisplay, SearchFilter } from '../components/ui';
 import EditContactModal from '../components/modals/EditContactModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
+
+// ── Constants ────────────────────────────────────────────────────
+const LEDGER_FILTERS = [
+  { id: 'all',      label: 'All Activity' },
+  { id: 'lent',     label: 'Lent Only' },
+  { id: 'received', label: 'Received Only' },
+];
+
+const LEDGER_SORTS = [
+  { id: 'date_desc',   label: 'Newest First' },
+  { id: 'date_asc',    label: 'Oldest First' },
+  { id: 'amount_desc', label: 'Amount: High to Low' },
+];
 
 // ── PDF generator (lazy import to avoid bundling html2pdf eagerly) ──
 async function generatePDF(contact, transactions, profile) {
@@ -50,26 +63,26 @@ async function generatePDF(contact, transactions, profile) {
       <div style="text-align:right;">
         <p style="font-size:13px; color:#333; margin:0;">Ledger for</p>
         <h2 style="font-size:20px; font-weight:700; margin:4px 0 0;">${contact.name}</h2>
-        ${contact.phone ? `<p style="font-size:12px; color:#666; margin:4px 0 0;">${contact.phone}</p>` : ''}
+        ${contact.phone ? \`<p style="font-size:12px; color:#666; margin:4px 0 0;">\${contact.phone}</p>\` : ''}
       </div>
     </div>
 
     <div style="display:flex; gap:32px; margin-bottom:32px;">
-      <div style="background:${netBalance >= 0 ? '#f0fff4' : '#fff0f0'}; border:1px solid ${netBalance >= 0 ? '#86efac' : '#fca5a5'}; border-radius:8px; padding:16px 24px; flex:1;">
+      <div style="background:\${netBalance >= 0 ? '#f0fff4' : '#fff0f0'}; border:1px solid \${netBalance >= 0 ? '#86efac' : '#fca5a5'}; border-radius:8px; padding:16px 24px; flex:1;">
         <p style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#666; margin:0 0 6px;">Net Balance</p>
-        <p style="font-size:26px; font-weight:700; margin:0; color:${netBalance >= 0 ? '#15803d' : '#dc2626'};">
-          ${netBalance >= 0 ? '+' : '-'}₹${Math.abs(netBalance).toLocaleString('en-IN')}
+        <p style="font-size:26px; font-weight:700; margin:0; color:\${netBalance >= 0 ? '#15803d' : '#dc2626'};">
+          \${netBalance >= 0 ? '+' : '-'}₹\${Math.abs(netBalance).toLocaleString('en-IN')}
         </p>
         <p style="font-size:11px; color:#666; margin:6px 0 0;">
-          ${netBalance > 0 ? `${contact.name} owes you` : netBalance < 0 ? `You owe ${contact.name}` : 'All settled'}
+          \${netBalance > 0 ? \`\${contact.name} owes you\` : netBalance < 0 ? \`You owe \${contact.name}\` : 'All settled'}
         </p>
       </div>
-      ${profile?.upiId ? `
+      \${profile?.upiId ? \`
       <div style="background:#f8f8f8; border:1px solid #e5e5e5; border-radius:8px; padding:16px 24px; flex:1;">
         <p style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#666; margin:0 0 6px;">UPI ID (Owner)</p>
-        <p style="font-size:14px; font-weight:600; margin:0;">${profile.upiId}</p>
+        <p style="font-size:14px; font-weight:600; margin:0;">\${profile.upiId}</p>
         <p style="font-size:11px; color:#666; margin:6px 0 0;">Share for settlement</p>
-      </div>` : ''}
+      </div>\` : ''}
     </div>
 
     <table style="width:100%; border-collapse:collapse; font-size:13px;">
@@ -83,38 +96,38 @@ async function generatePDF(contact, transactions, profile) {
         </tr>
       </thead>
       <tbody>
-        ${rows.map((tx, i) => {
+        \${rows.map((tx, i) => {
           const isLent = tx.type === TX_TYPE.LENT;
           const bal    = tx.runningBalance;
-          return `
-          <tr style="background:${i % 2 === 0 ? '#fff' : '#fafafa'};">
-            <td style="padding:9px 12px; border-bottom:1px solid #f0f0f0; color:#555;">${formatDate(tx.date)}</td>
-            <td style="padding:9px 12px; border-bottom:1px solid #f0f0f0;">${tx.note || '—'}</td>
+          return \`
+          <tr style="background:\${i % 2 === 0 ? '#fff' : '#fafafa'};">
+            <td style="padding:9px 12px; border-bottom:1px solid #f0f0f0; color:#555;">\${formatDate(tx.date)}</td>
+            <td style="padding:9px 12px; border-bottom:1px solid #f0f0f0;">\${tx.note || '—'}</td>
             <td style="padding:9px 12px; border-bottom:1px solid #f0f0f0; text-align:right; color:#dc2626;">
-              ${isLent ? `₹${tx.amount.toLocaleString('en-IN')}` : ''}
+              \${isLent ? \`₹\${tx.amount.toLocaleString('en-IN')}\` : ''}
             </td>
             <td style="padding:9px 12px; border-bottom:1px solid #f0f0f0; text-align:right; color:#15803d;">
-              ${!isLent ? `₹${tx.amount.toLocaleString('en-IN')}` : ''}
+              \${!isLent ? \`₹\${tx.amount.toLocaleString('en-IN')}\` : ''}
             </td>
-            <td style="padding:9px 12px; border-bottom:1px solid #f0f0f0; text-align:right; font-weight:600; color:${bal >= 0 ? '#15803d' : '#dc2626'};">
-              ${bal >= 0 ? '+' : '−'}₹${Math.abs(bal).toLocaleString('en-IN')}
+            <td style="padding:9px 12px; border-bottom:1px solid #f0f0f0; text-align:right; font-weight:600; color:\${bal >= 0 ? '#15803d' : '#dc2626'};">
+              \${bal >= 0 ? '+' : '−'}₹\${Math.abs(bal).toLocaleString('en-IN')}
             </td>
-          </tr>`;
+          </tr>\`;
         }).join('')}
       </tbody>
     </table>
 
     <div style="margin-top:32px; padding-top:16px; border-top:1px solid #e5e5e5; display:flex; justify-content:space-between; align-items:center;">
-      <p style="font-size:11px; color:#999; margin:0;">Generated by VOID · ${new Date().toLocaleString('en-IN')}</p>
-      <p style="font-size:11px; color:#999; margin:0;">${transactions.length} transaction${transactions.length !== 1 ? 's' : ''}</p>
+      <p style="font-size:11px; color:#999; margin:0;">Generated by VOID · \${new Date().toLocaleString('en-IN')}</p>
+      <p style="font-size:11px; color:#999; margin:0;">\${transactions.length} transaction\${transactions.length !== 1 ? 's' : ''}</p>
     </div>
-  `;
+  \`;
 
   document.body.appendChild(el);
   await html2pdf()
     .set({
       margin:      [10, 10, 10, 10],
-      filename:    `VOID_${contact.name.replace(/\s+/g, '_')}_ledger.pdf`,
+      filename:    \`VOID_\${contact.name.replace(/\s+/g, '_')}_ledger.pdf\`,
       image:       { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, backgroundColor: '#ffffff' },
       jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -125,7 +138,7 @@ async function generatePDF(contact, transactions, profile) {
 }
 
 // ── Timeline entry ──────────────────────────────────────────────
-function TimelineEntry({ tx, isGhostMode }) {
+function TimelineEntry({ tx, ghostIndex }) {
   const isLent     = tx.type === TX_TYPE.LENT;
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -145,46 +158,53 @@ function TimelineEntry({ tx, isGhostMode }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-        className="flex flex-col items-center justify-center px-4 py-0.5 w-full"
+        className="flex flex-col items-center justify-center px-4 py-1 w-full"
       >
-        {/* Card */}
+        {/* Row-based Layout */}
         <div
-          className="relative w-full max-w-[85%] rounded-glass-sm px-4 py-3 flex flex-col items-center justify-center text-center group"
+          className="relative w-full max-w-[92%] rounded-2xl px-5 py-4 flex flex-row items-center justify-between group overflow-hidden"
           style={{
-            background:  isLent ? 'rgba(255,69,58,0.09)'  : 'rgba(50,215,75,0.09)',
-            border:      `1px solid ${isLent ? 'rgba(255,69,58,0.18)' : 'rgba(50,215,75,0.18)'}`,
+            background:  isLent ? 'rgba(255,69,58,0.06)'  : 'rgba(50,215,75,0.06)',
+            border:      \`1px solid \${isLent ? 'rgba(255,69,58,0.12)' : 'rgba(50,215,75,0.12)'}\`,
           }}
         >
-          {/* Amount */}
-          <AmountDisplay
-            amount={tx.amount}
-            type={tx.type}
-            showSign={true}
-            prefix={isLent ? '−' : '+'}
-            colored={true}
-            className="text-xl font-bold tabular-nums tracking-tight leading-tight"
-          />
+          {/* Metadata: Note & Date */}
+          <div className="flex flex-col items-start text-left max-w-[65%]">
+            {tx.note ? (
+              <p className="text-[#F5F5F7] text-[13px] font-medium leading-tight mb-1 truncate w-full">
+                {tx.note}
+              </p>
+            ) : (
+              <p className="text-[#3A3A3C] text-[13px] italic font-medium leading-tight mb-1">
+                No note
+              </p>
+            )}
+            <p className="text-[#3A3A3C] text-[10px] uppercase tracking-widest font-bold">
+              {formatRelativeDate(tx.date)}
+            </p>
+          </div>
 
-          {/* Note */}
-          {tx.note && (
-            <p className="text-[#8E8E93] text-xs mt-1 leading-snug">{tx.note}</p>
-          )}
+          {/* Hero: Amount */}
+          <div className="flex flex-col items-end text-right ml-4">
+            <AmountDisplay
+              value={isLent ? -tx.amount : tx.amount}
+              showSign={true}
+              colored={true}
+              ghostIndex={ghostIndex}
+              className="text-xl font-bold tracking-tight leading-none"
+            />
+          </div>
 
-          {/* Date */}
-          <p className="text-[#3A3A3C] text-[10px] mt-1.5">{formatRelativeDate(tx.date)}</p>
-
-          {/* Delete button */}
+          {/* Delete button (Glass circle) */}
           <motion.button
             onClick={() => setShowConfirm(true)}
             whileTap={{ scale: 0.88 }}
             disabled={deleting}
-            className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer opacity-0 md:group-hover:opacity-100 transition-opacity md:opacity-0 opacity-100"
-            style={{ background: 'rgba(40,40,40,0.95)', border: '1px solid rgba(255,255,255,0.1)' }}
-            aria-label="Delete transaction"
+            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer opacity-0 md:group-hover:opacity-100 transition-opacity md:opacity-0 opacity-100 backdrop-blur-md bg-black/40 border border-white/10"
           >
             {deleting
               ? <Loader2 size={10} className="animate-spin text-white" />
-              : <Trash2 size={10} className="text-[#8E8E93]" strokeWidth={2} />
+              : <Trash2 size={12} className="text-[#FF453A]" />
             }
           </motion.button>
         </div>
@@ -277,43 +297,76 @@ export default function ContactLedger({ profile }) {
   const [deleteLoading,   setDeleteLoading]   = useState(false);
   const [pdfLoading,      setPdfLoading]      = useState(false);
 
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [sort,   setSort]   = useState('date_desc');
+
   const contact      = getContact(id);
   const transactions = getContactTransactions(id);
   const netBalance   = getContactBalance(id);
 
-  // ── Communication ─────────────────────────────────────────────
+  // ── Build filtered transaction list ──────────────────────────
+  const filteredTxs = useMemo(() => {
+    let list = [...transactions];
+
+    // 1. Search
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(tx => 
+        tx.note?.toLowerCase().includes(q) || 
+        tx.amount.toString().includes(q)
+      );
+    }
+
+    // 2. Filter
+    if (filter === 'lent')     list = list.filter(tx => tx.type === TX_TYPE.LENT);
+    if (filter === 'received') list = list.filter(tx => tx.type === TX_TYPE.RECEIVED);
+
+    // 3. Sort
+    list.sort((a, b) => {
+      if (sort === 'date_desc') return b.date?.toDate?.() - a.date?.toDate?.();
+      if (sort === 'date_asc')  return a.date?.toDate?.() - b.date?.toDate?.();
+      if (sort === 'amount_desc') return b.amount - a.amount;
+      return 0;
+    });
+
+    return list;
+  }, [transactions, search, filter, sort]);
+
+  // ── WhatsApp nudge ─────────────────────────────────────────────
   const handleWhatsApp = useCallback(() => {
     if (!contact) return;
     if (!contact.phone) { setShowPhonePrompt(true); return; }
 
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
+    const signature = 'and hey from manthan';
+    
     const message = netBalance > 0
-      ? `Hi ${contact.name}, just a gentle nudge! You have a pending balance of ₹${absAmt} with me. You can settle it via UPI: ${profile?.upiId ?? 'my UPI'}. Thanks! — and hey from manthan via VOID`
-      : `Hi ${contact.name}, a quick update — I owe you ₹${absAmt}. I'll settle it soon via UPI: ${profile?.upiId ?? 'my UPI'}. — and hey from manthan via VOID`;
+      ? \`Hi \${contact.name}, just a gentle nudge! You have a pending balance of ₹\${absAmt} with me. You can settle it via UPI: \${profile?.upiId ?? 'my UPI'}. Thanks! \${signature} — Sent via VOID\`
+      : \`Hi \${contact.name}, a quick update — I owe you ₹\${absAmt}. I'll settle it soon via UPI: \${profile?.upiId ?? 'my UPI'}. \${signature} — Sent via VOID\`;
 
     window.open(buildWhatsAppUrl(contact.phone, message), '_blank');
   }, [contact, netBalance, profile]);
 
+  // Messages (SMS) nudge
   const handleSMS = useCallback(() => {
     if (!contact) return;
     if (!contact.phone) { setShowPhonePrompt(true); return; }
 
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
-    const message = netBalance > 0
-      ? `Hi ${contact.name}, gentle nudge! Pending: ₹${absAmt}. UPI: ${profile?.upiId ?? 'my UPI'}. — and hey from manthan via VOID`
-      : `Hi ${contact.name}, I owe you ₹${absAmt}. Settling soon. — and hey from manthan via VOID`;
-
-    const encoded = encodeURIComponent(message);
-    // iOS uses &body= while Android uses ?body=. Target iOS as per requirement.
-    window.open(`sms:${contact.phone}&body=${encoded}`, '_self');
+    const signature = 'and hey from manthan';
+    const message = \`Hi \${contact.name}, pending balance: ₹\${absAmt}. Settle via: \${profile?.upiId ?? 'my UPI'}. \${signature} — Sent via VOID\`;
+    
+    window.open(\`sms:\${contact.phone}&body=\${encodeURIComponent(message)}\`, '_self');
   }, [contact, netBalance, profile]);
 
   // After phone prompt saves, re-trigger WhatsApp
   const handlePhoneSaved = useCallback((phone) => {
     setShowPhonePrompt(false);
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
-    const message = `Hi ${contact.name}, just a gentle nudge! Pending balance: ₹${absAmt}. Settle via: ${profile?.upiId ?? 'my UPI'}. — and hey from manthan via VOID`;
-    window.open(buildWhatsAppUrl(phone, message), '_blank');
+    const signature = 'and hey from manthan';
+    const message = \`Hi \${contact.name}, just a gentle nudge! Pending balance: ₹\${absAmt}. Settle via: \${profile?.upiId ?? 'my UPI'}. \${signature} — Sent via VOID\`;
+    window.open(buildWhatsAppUrl(phone, message), \'_blank\');
   }, [contact, netBalance, profile]);
 
   // ── PDF export ─────────────────────────────────────────────────
@@ -333,7 +386,7 @@ export default function ContactLedger({ profile }) {
   }, [contact, softDeleteContact, navigate]);
 
   // ── Group transactions by date ─────────────────────────────────
-  const grouped = transactions.reduce((acc, tx) => {
+  const grouped = filteredTxs.reduce((acc, tx) => {
     const key = formatDate(tx.date) || 'Unknown';
     if (!acc[key]) acc[key] = [];
     acc[key].push(tx);
@@ -368,7 +421,7 @@ export default function ContactLedger({ profile }) {
           className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3 cursor-pointer"
           style={{
             background: isPositive ? 'rgba(50,215,75,0.12)'  : isNegative ? 'rgba(255,69,58,0.12)' : 'rgba(255,255,255,0.06)',
-            border:     `1px solid ${isPositive ? 'rgba(50,215,75,0.25)' : isNegative ? 'rgba(255,69,58,0.25)' : 'rgba(255,255,255,0.1)'}`,
+            border:     \`1px solid \${isPositive ? 'rgba(50,215,75,0.25)' : isNegative ? 'rgba(255,69,58,0.25)' : 'rgba(255,255,255,0.1)'}\`,
             color:      isPositive ? '#32D74B' : isNegative ? '#FF453A' : '#8E8E93',
           }}
           aria-label="Edit Profile"
@@ -389,10 +442,11 @@ export default function ContactLedger({ profile }) {
 
         {/* Net balance */}
         <AmountDisplay
-          amount={netBalance}
+          value={netBalance}
           showSign={true}
           colored={true}
-          className="text-4xl font-bold tabular-nums tracking-[-0.03em] mt-1"
+          ghostIndex={0}
+          className="text-4xl font-bold tracking-[-0.03em] mt-1"
           style={{
             textShadow: isGhostMode ? 'none'
               : isPositive ? '0 0 40px rgba(50,215,75,0.35)'
@@ -403,7 +457,7 @@ export default function ContactLedger({ profile }) {
 
         <p className="text-[#3A3A3C] text-xs mt-1">
           {isPositive ? 'owes you' : isNegative ? 'you owe' : 'all settled'}
-          {transactions.length > 0 && ` · ${transactions.length} entries`}
+          {transactions.length > 0 && \` · \${transactions.length} entries\`}
         </p>
 
         {/* ── Action pills ──────────────────────────────────────── */}
@@ -417,24 +471,22 @@ export default function ContactLedger({ profile }) {
             onClick={handleWhatsApp}
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-pill text-xs font-semibold cursor-pointer border select-none"
-            style={{ background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.2)', color: '#25D366' }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold cursor-pointer border border-green-500/20 bg-green-500/10 text-green-500 select-none"
             aria-label="Send WhatsApp nudge"
           >
             <MessageCircle size={13} strokeWidth={2} />
             WhatsApp
           </motion.button>
 
-          {/* Messages */}
+          {/* Messages (SMS) */}
           <motion.button
             onClick={handleSMS}
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-pill text-xs font-semibold cursor-pointer border select-none"
-            style={{ background: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.2)', color: '#0A84FF' }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold cursor-pointer border border-blue-500/20 bg-blue-500/10 text-blue-500 select-none"
             aria-label="Send SMS nudge"
           >
-            <MessageCircle size={13} strokeWidth={2} />
+            <Phone size={13} strokeWidth={2} />
             Messages
           </motion.button>
 
@@ -444,8 +496,7 @@ export default function ContactLedger({ profile }) {
             disabled={pdfLoading}
             whileTap={!pdfLoading ? { scale: 0.96 } : undefined}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-pill text-xs font-semibold cursor-pointer border select-none"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#8E8E93' }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold cursor-pointer border border-yellow-500/20 bg-yellow-500/10 text-yellow-500 select-none"
             aria-label="Export PDF dossier"
           >
             {pdfLoading
@@ -460,12 +511,7 @@ export default function ContactLedger({ profile }) {
             onClick={toggleGhost}
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-pill text-xs font-semibold cursor-pointer border select-none"
-            style={{
-              background: isGhostMode ? 'rgba(255,69,58,0.1)' : 'rgba(255,255,255,0.05)',
-              border:     `1px solid ${isGhostMode ? 'rgba(255,69,58,0.2)' : 'rgba(255,255,255,0.1)'}`,
-              color:      isGhostMode ? '#FF453A' : '#8E8E93',
-            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold cursor-pointer border border-gray-400/20 bg-gray-400/10 text-gray-400 select-none"
             aria-label={isGhostMode ? 'Show amounts' : 'Hide amounts (Ghost Mode)'}
           >
             {isGhostMode ? <EyeOff size={13} strokeWidth={2} /> : <Eye size={13} strokeWidth={1.75} />}
@@ -474,50 +520,69 @@ export default function ContactLedger({ profile }) {
         </motion.div>
       </div>
 
+      {/* ── Search & Filter ──────────────────────────────────── */}
+      {transactions.length > 0 && (
+        <SearchFilter
+          placeholder="Search ledger..."
+          value={search}
+          onChange={setSearch}
+          filterOptions={LEDGER_FILTERS}
+          activeFilter={filter}
+          onFilterChange={setFilter}
+          sortOptions={LEDGER_SORTS}
+          activeSort={sort}
+          onSortChange={setSort}
+        />
+      )}
+
       {/* ── Transaction Timeline ──────────────────────────────── */}
-      {transactions.length === 0 ? (
+      {filteredTxs.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
           className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center"
         >
-          <p className="text-[#3A3A3C] text-sm">No transactions yet</p>
-          <motion.button
-            onClick={() => openModal(null, contact ? { id: contact.id, name: contact.name } : null)}
-            whileTap={{ scale: 0.96 }}
-            className="text-[#32D74B] text-sm font-medium mt-2 cursor-pointer"
-          >
-            + Record first transaction
-          </motion.button>
+          <p className="text-[#3A3A3C] text-sm">No matches found</p>
+          {(search || filter !== 'all') && (
+            <button 
+              onClick={() => { setSearch(''); setFilter('all'); }}
+              className="text-[#32D74B] text-xs font-medium mt-1 cursor-pointer"
+            >
+              Clear filters
+            </button>
+          )}
         </motion.div>
       ) : (
         <div className="flex flex-col gap-1 pb-4">
           {/* Date section divider label at top */}
           <div className="px-6 mb-2">
             <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[#3A3A3C]">
-              Timeline · newest first
+              Timeline · \${sort === 'date_desc' ? 'newest first' : sort === 'date_asc' ? 'oldest first' : 'by amount'}
             </p>
           </div>
 
           <AnimatePresence>
-            {Object.entries(grouped).map(([dateLabel, txs]) => (
-              <div key={dateLabel} className="flex flex-col gap-2 mb-3">
-                {/* Date divider */}
-                <div className="flex flex-col items-center justify-center px-4 mt-2 mb-1">
-                  <p className="text-[10px] text-[#3A3A3C] font-semibold tracking-[0.14em] uppercase whitespace-nowrap">{dateLabel}</p>
-                </div>
+            {(() => {
+              let txIndex = 1;
+              return Object.entries(grouped).map(([dateLabel, txs]) => (
+                <div key={dateLabel} className="flex flex-col gap-2 mb-3">
+                  {/* Date divider */}
+                  <div className="flex flex-col items-center justify-center px-4 mt-2 mb-1">
+                    <p className="text-[10px] text-[#3A3A3C] font-semibold tracking-[0.14em] uppercase whitespace-nowrap">{dateLabel}</p>
+                  </div>
 
-                {/* Entries for this date */}
-                <div className="flex flex-col gap-2 group">
-                  {txs.map((tx) => (
-                    <TimelineEntry
-                      key={tx.id}
-                      tx={tx}
-                      isGhostMode={isGhostMode}
-                    />
-                  ))}
+                  {/* Entries for this date */}
+                  <div className="flex flex-col gap-2 group">
+                    {txs.map((tx) => (
+                      <TimelineEntry
+                        key={tx.id}
+                        tx={tx}
+                        ghostIndex={txIndex++}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })()}
           </AnimatePresence>
         </div>
       )}
