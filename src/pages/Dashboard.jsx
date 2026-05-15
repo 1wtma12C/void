@@ -152,6 +152,13 @@ function Divider({ label }) {
   );
 }
 
+// Helper function to extract and capitalize the first name
+const formatFirstName = (fullName) => {
+  if (!fullName) return '';
+  const firstName = fullName.split(' ')[0]; // Grab everything before the first space
+  return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+};
+
 // ── Contact Card (Matrix Tile) ────────────────────────────────────
 function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
   const navigate = useNavigate();
@@ -159,6 +166,8 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
 
   const isPositive = balance > 0;
   const isNegative = balance < 0;
+
+  const displayName = formatFirstName(contact.name);
 
   return (
     <motion.div
@@ -190,13 +199,13 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
           color: isPositive ? '#32D74B' : isNegative ? '#FF453A' : '#8E8E93',
         }}
       >
-        {contact.name.charAt(0).toUpperCase()}
+        {displayName.charAt(0)}
       </div>
 
       {/* Name */}
       <div className="text-center w-full px-1 mb-1">
         <p className="text-[#F5F5F7] text-[11px] font-medium tracking-tight truncate leading-tight group-hover:text-white transition-colors">
-          {contact.name}
+          {displayName}
         </p>
       </div>
 

@@ -167,7 +167,7 @@ function TimelineEntry({ tx, ghostIndex }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-        className="relative flex flex-col items-center justify-center px-4 py-1 w-full overflow-hidden rounded-xl"
+        className="relative flex flex-col items-center justify-center w-full overflow-hidden"
       >
         {/* Swipe-to-delete Crimson Nebula Layer (Background) */}
         <div 
@@ -184,7 +184,7 @@ function TimelineEntry({ tx, ghostIndex }) {
           </motion.div>
         </div>
 
-        {/* Draggable Row content (Foreground) */}
+        {/* Draggable Row content (Foreground - Native iOS Style) */}
         <motion.div
           drag="x"
           dragConstraints={{ left: -80, right: 0 }}
@@ -194,42 +194,33 @@ function TimelineEntry({ tx, ghostIndex }) {
               setShowConfirm(true);
             }
           }}
-          className="relative z-10 w-full cursor-grab active:cursor-grabbing bg-black"
+          className="relative z-10 bg-black w-full px-6 py-4 flex flex-row justify-between items-center border-b border-white/5 last:border-0 cursor-grab active:cursor-grabbing"
         >
-          <div
-            className="relative w-full max-w-[92%] mx-auto rounded-2xl px-5 py-4 flex flex-row items-center justify-between group overflow-hidden"
-            style={{
-              background:  isLent ? 'rgba(255,69,58,0.06)'  : 'rgba(50,215,75,0.06)',
-              border:      `1px solid ${isLent ? 'rgba(255,69,58,0.12)' : 'rgba(50,215,75,0.12)'}`,
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            {/* Metadata: Note & Date */}
-            <div className="flex flex-col items-start text-left max-w-[65%]">
-              {tx.note ? (
-                <p className="text-[#F5F5F7] text-[13px] font-medium leading-tight mb-1 truncate w-full">
-                  {tx.note}
-                </p>
-              ) : (
-                <p className="text-[#3A3A3C] text-[13px] italic font-medium leading-tight mb-1">
-                  No note
-                </p>
-              )}
-              <p className="text-[#3A3A3C] text-[10px] uppercase tracking-widest font-bold">
-                {formatRelativeDate(tx.date)}
+          {/* Left Side: Metadata (Date & Note) */}
+          <div className="flex flex-col items-start gap-1 max-w-[70%]">
+            <p className="text-[#8E8E93] text-sm uppercase tracking-wider font-semibold">
+              {formatRelativeDate(tx.date)}
+            </p>
+            {tx.note ? (
+              <p className="text-[#F5F5F7] text-base font-medium leading-tight truncate w-full">
+                {tx.note}
               </p>
-            </div>
+            ) : (
+              <p className="text-[#3A3A3C] text-base italic font-medium leading-tight">
+                No note
+              </p>
+            )}
+          </div>
 
-            {/* Hero: Amount */}
-            <div className="flex flex-col items-end text-right ml-4">
-              <AmountDisplay
-                value={isLent ? -tx.amount : tx.amount}
-                showSign={true}
-                colored={true}
-                ghostIndex={ghostIndex}
-                className="text-xl font-bold tracking-tight leading-none"
-              />
-            </div>
+          {/* Right Side: Hero Amount */}
+          <div className="flex flex-col items-end text-right ml-4">
+            <AmountDisplay
+              value={isLent ? -tx.amount : tx.amount}
+              showSign={true}
+              colored={true}
+              ghostIndex={ghostIndex}
+              className="text-xl md:text-2xl font-bold tracking-tight leading-none"
+            />
           </div>
         </motion.div>
       </motion.div>
@@ -521,7 +512,6 @@ export default function ContactLedger({ profile }) {
 
         <p className="text-[#3A3A3C] text-xs mt-0.5">
           {isPositive ? 'owes you' : isNegative ? 'you owe' : 'all settled'}
-          {transactions.length > 0 && ` · ${transactions.length} entries`}
         </p>
 
         {/* ── Action pills ──────────────────────────────────────── */}
@@ -633,7 +623,7 @@ export default function ContactLedger({ profile }) {
           )}
         </motion.div>
       ) : (
-        <div className="flex flex-col gap-1 pb-4">
+        <div className="flex flex-col pb-4">
           {/* Date section divider label at top */}
           <div className="px-6 mb-2">
             <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[#3A3A3C]">
@@ -645,14 +635,14 @@ export default function ContactLedger({ profile }) {
             {(() => {
               let txIndex = 1;
               return Object.entries(grouped).map(([dateLabel, txs]) => (
-                <div key={dateLabel} className="flex flex-col gap-2 mb-3">
+                <div key={dateLabel} className="flex flex-col mb-3">
                   {/* Date divider */}
                   <div className="flex flex-col items-center justify-center px-4 mt-2 mb-1">
                     <p className="text-[10px] text-[#3A3A3C] font-semibold tracking-[0.14em] uppercase whitespace-nowrap">{dateLabel}</p>
                   </div>
 
                   {/* Entries for this date */}
-                  <div className="flex flex-col gap-2 group">
+                  <div className="flex flex-col group">
                     {txs.map((tx) => (
                       <TimelineEntry
                         key={tx.id}
