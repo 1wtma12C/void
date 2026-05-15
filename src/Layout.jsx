@@ -110,8 +110,9 @@ export default function Layout({ children }) {
     <div className="flex flex-col min-h-dvh bg-black text-[#F5F5F7]">
 
       {/* ── Top Header ─────────────────────────────────────────── */}
+      {/* ── Top Header ─────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-40 w-full flex items-center justify-between bg-black/50 backdrop-blur-2xl border-b border-white/5"
+        className="sticky top-0 z-40 w-full flex items-center justify-between pointer-events-none"
         style={{
           paddingTop:    'calc(env(safe-area-inset-top) + 12px)',
           paddingLeft:   'calc(env(safe-area-inset-left)  + 20px)',
@@ -120,7 +121,7 @@ export default function Layout({ children }) {
         }}
       >
         {/* Left: back arrow on sub-pages (not vault), Ghost mode on root */}
-        <div className="flex-1 flex justify-start items-center">
+        <div className="flex-1 flex justify-start items-center pointer-events-auto">
           {isContactPage ? (
             <motion.button
               onClick={() => navigate(-1)}
@@ -171,20 +172,22 @@ export default function Layout({ children }) {
           )}
         </div>
 
-        {/* Center: Absolute VOID Wordmark (Hidden Vault Trigger / Exit) */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0px)' }}>
-          <motion.span
-            onClick={() => navigate(isVaultPage ? '/' : '/vault')}
-            whileTap={{ scale: 0.95 }}
-            className="pointer-events-auto text-xl font-bold tracking-[-0.04em] text-[#F5F5F7] cursor-pointer select-none"
-            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif' }}
-          >
-            VOID
-          </motion.span>
+        {/* Center: Floating Logo Pill (Dynamic Island Effect) */}
+        <div className="absolute inset-x-0 top-0 pointer-events-none flex items-center justify-center" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)' }}>
+          <div className="pointer-events-auto px-6 py-2 rounded-full bg-white/5 backdrop-blur-2xl border border-white/10 shadow-lg flex items-center justify-center">
+            <motion.span
+              onClick={() => navigate(isVaultPage ? '/' : '/vault')}
+              whileTap={{ scale: 0.95 }}
+              className="text-xl font-bold tracking-[-0.04em] text-[#F5F5F7] cursor-pointer select-none"
+              style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif' }}
+            >
+              VOID
+            </motion.span>
+          </div>
         </div>
 
         {/* Right: Search */}
-        <div className="flex-1 flex justify-end items-center">
+        <div className="flex-1 flex justify-end items-center pointer-events-auto">
           <motion.button
             onClick={() => setIsSearchOpen(true)}
             whileTap={{ scale: 0.88 }}
