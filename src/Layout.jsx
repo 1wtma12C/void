@@ -203,7 +203,7 @@ export default function Layout({ children }) {
 
       {/* ── Scrollable Page Content ─────────────────────────────── */}
       <main
-        className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24"
+        className="flex-1 overflow-y-auto relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24"
         style={{
           paddingTop:    '20px',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 90px)',
