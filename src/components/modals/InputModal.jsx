@@ -57,9 +57,11 @@ function TypeToggle({ value, onChange }) {
 
 // ── MAIN MODAL ───────────────────────────────────────────────────
 export default function InputModal() {
-  const { isOpen, prefillType, prefillContact, closeModal } = useInputModal();
+  const { isOpen, prefillType, prefillContact, context, closeModal } = useInputModal();
   const { upsertContact, contacts } = useContacts();
   const { addTransaction } = useTransactions();
+
+  const isLedger = context === 'ledger';
 
   // Form State
   const [txType,  setTxType]  = useState(TX_TYPE.LENT);
@@ -88,7 +90,7 @@ export default function InputModal() {
     }
   }, [isOpen, prefillType, prefillContact]);
 
-  const isValid = Number(amount) > 0 && name.trim().length >= 2;
+  const isValid = Number(amount) > 0 && (isLedger || name.trim().length >= 2);
 
   // Contact suggestions
   const [suggestions, setSuggestions] = useState([]);
@@ -124,22 +126,23 @@ export default function InputModal() {
     setError('');
     
     try {
-      // 1. Deduplication Logic: Check for exact case-insensitive match
-      const existingContact = contacts.find(c => c.name.toLowerCase() === name.trim().toLowerCase());
-      let contactId;
+      let contactId = prefillContact?.id;
 
-      if (existingContact) {
-        // Use existing contact ID, but maybe update their details if they were empty? 
-        // For simplicity, we just use the ID.
-        contactId = existingContact.id;
-      } else {
-        // 2. Upsert Contact (returns ID)
-        contactId = await upsertContact({
-          name: name.trim(),
-          phone,
-          email,
-          upiId: upi,
-        });
+      if (!isLedger) {
+        // 1. Deduplication Logic: Check for exact case-insensitive match
+        const existingContact = contacts.find(c => c.name.toLowerCase() === name.trim().toLowerCase());
+
+        if (existingContact) {
+          contactId = existingContact.id;
+        } else {
+          // 2. Upsert Contact (returns ID)
+          contactId = await upsertContact({
+            name: name.trim(),
+            phone,
+            email,
+            upiId: upi,
+          });
+        }
       }
 
       // 3. Add Transaction
@@ -156,7 +159,7 @@ export default function InputModal() {
       setError('Could not record transaction. Check your connection.');
       setLoading(false);
     }
-  }, [amount, name, phone, email, upi, note, txType, loading, isValid, upsertContact, addTransaction, closeModal, contacts]);
+  }, [amount, name, phone, email, upi, note, txType, loading, isValid, upsertContact, addTransaction, closeModal, contacts, isLedger, prefillContact]);
 
   return (
     <AnimatePresence>
@@ -186,13 +189,14 @@ export default function InputModal() {
               borderRadius:  '28px 28px 0 0',
               paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)',
               maxHeight:     '92dvh',
+              height: isLedger ? 'auto' : '92dvh',
             }}
           >
             {/* Handle + header */}
             <div className="flex flex-col items-center justify-center pt-4 pb-2 w-full flex-shrink-0 relative">
               <div className="w-8 h-0.5 rounded-full bg-white/20 mb-3" />
               <p className="text-[#F5F5F7] text-base font-semibold tracking-tight">
-                New Entry
+                {isLedger ? 'Quick Entry' : 'New Entry'}
               </p>
               <motion.button
                 onClick={closeModal}
@@ -205,46 +209,48 @@ export default function InputModal() {
               </motion.button>
             </div>
 
-            {/* Scrollable Body */}
-            <div className="flex-1 overflow-y-auto px-6 pt-4 pb-6 w-full flex flex-col items-center">
+            {/* Body */}
+            <div className={`flex-1 ${isLedger ? '' : 'overflow-y-auto'} px-6 pt-4 pb-6 w-full flex flex-col items-center`}>
               
               <TypeToggle value={txType} onChange={setTxType} />
               
-              <div className="w-full flex flex-col gap-5 max-w-sm mx-auto mb-6 relative">
-                <MagnifiedInput
-                  id="unified-name"
-                  icon={User}
-                  label="Contact Name"
-                  required={true}
-                  value={name}
-                  onChange={handleNameChange}
-                  placeholder="e.g. Rahul Sharma"
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                />
+              {!isLedger && (
+                <div className="w-full flex flex-col gap-5 max-w-sm mx-auto mb-6 relative">
+                  <MagnifiedInput
+                    id="unified-name"
+                    icon={User}
+                    label="Contact Name"
+                    required={true}
+                    value={name}
+                    onChange={handleNameChange}
+                    placeholder="e.g. Rahul Sharma"
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  />
 
-                {/* Custom Suggestions Dropdown */}
-                <AnimatePresence>
-                  {showSuggestions && suggestions.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full left-0 right-0 z-[100] mt-1 glass-modal rounded-xl overflow-hidden shadow-2xl"
-                    >
-                      {suggestions.slice(0, 5).map(c => (
-                        <button
-                          key={c.id}
-                          onClick={() => selectSuggestion(c)}
-                          className="w-full text-left px-4 py-3 border-b border-white/5 last:border-0 active:bg-white/10 flex items-center justify-between"
-                        >
-                          <span className="text-[#F5F5F7] text-sm font-medium">{c.name}</span>
-                          <span className="text-[#8E8E93] text-[10px]">Existing</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                  {/* Custom Suggestions Dropdown */}
+                  <AnimatePresence>
+                    {showSuggestions && suggestions.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute top-full left-0 right-0 z-[100] mt-1 glass-modal rounded-xl overflow-hidden shadow-2xl"
+                      >
+                        {suggestions.slice(0, 5).map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => selectSuggestion(c)}
+                            className="w-full text-left px-4 py-3 border-b border-white/5 last:border-0 active:bg-white/10 flex items-center justify-between"
+                          >
+                            <span className="text-[#F5F5F7] text-sm font-medium">{c.name}</span>
+                            <span className="text-[#8E8E93] text-[10px]">Existing</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
               <div className="w-full flex flex-col gap-5 max-w-sm mx-auto">
                 <MagnifiedInput
@@ -257,48 +263,53 @@ export default function InputModal() {
                   value={amount}
                   onChange={setAmount}
                   placeholder="0"
+                  autoFocus={isLedger}
                 />
 
-                <MagnifiedInput
-                  id="unified-note"
-                  icon={AlignLeft}
-                  label="Notes / Description"
-                  value={note}
-                  onChange={setNote}
-                  placeholder="Dinner, rent, trip..."
-                />
+                {!isLedger && (
+                  <>
+                    <MagnifiedInput
+                      id="unified-note"
+                      icon={AlignLeft}
+                      label="Notes / Description"
+                      value={note}
+                      onChange={setNote}
+                      placeholder="Dinner, rent, trip..."
+                    />
 
-                <MagnifiedInput
-                  id="unified-phone"
-                  icon={Phone}
-                  label="Mobile Number"
-                  type="tel"
-                  inputMode="tel"
-                  value={phone}
-                  onChange={setPhone}
-                  placeholder="+91 98765 43210"
-                />
+                    <MagnifiedInput
+                      id="unified-phone"
+                      icon={Phone}
+                      label="Mobile Number"
+                      type="tel"
+                      inputMode="tel"
+                      value={phone}
+                      onChange={setPhone}
+                      placeholder="+91 98765 43210"
+                    />
 
-                <MagnifiedInput
-                  id="unified-upi"
-                  icon={AtSign}
-                  label="Contact UPI ID"
-                  value={upi}
-                  onChange={setUpi}
-                  placeholder="rahul@okicici"
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                />
+                    <MagnifiedInput
+                      id="unified-upi"
+                      icon={AtSign}
+                      label="Contact UPI ID"
+                      value={upi}
+                      onChange={setUpi}
+                      placeholder="rahul@okicici"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                    />
 
-                <MagnifiedInput
-                  id="unified-email"
-                  icon={Mail}
-                  label="Email Address"
-                  type="email"
-                  inputMode="email"
-                  value={email}
-                  onChange={setEmail}
-                  placeholder="rahul@example.com"
-                />
+                    <MagnifiedInput
+                      id="unified-email"
+                      icon={Mail}
+                      label="Email Address"
+                      type="email"
+                      inputMode="email"
+                      value={email}
+                      onChange={setEmail}
+                      placeholder="rahul@example.com"
+                    />
+                  </>
+                )}
                 
                 {error && <p className="text-[#FF453A] text-xs text-center">{error}</p>}
               </div>
@@ -318,7 +329,7 @@ export default function InputModal() {
               >
                 {loading
                   ? <><Loader2 size={16} className="animate-spin" /> Saving…</>
-                  : <><Check size={16} strokeWidth={2.5} /> Save Log</>
+                  : <><Check size={16} strokeWidth={2.5} /> {isLedger ? 'Confirm Entry' : 'Save Log'}</>
                 }
               </motion.button>
             </div>

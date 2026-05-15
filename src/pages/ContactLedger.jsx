@@ -156,13 +156,14 @@ function TimelineEntry({ tx, isGhostMode }) {
           }}
         >
           {/* Amount */}
-          <p
-            className={['text-xl font-bold tabular-nums tracking-tight leading-tight amount-display', isGhostMode ? 'ghost' : ''].join(' ')}
-            style={{ color: isLent ? '#FF453A' : '#32D74B' }}
-            aria-label={isGhostMode ? 'Amount hidden' : `${isLent ? 'Lent' : 'Received'} ₹${tx.amount}`}
-          >
-            {isLent ? '−' : '+'}₹{tx.amount.toLocaleString('en-IN')}
-          </p>
+          <AmountDisplay
+            amount={tx.amount}
+            type={tx.type}
+            showSign={true}
+            prefix={isLent ? '−' : '+'}
+            colored={true}
+            className="text-xl font-bold tabular-nums tracking-tight leading-tight"
+          />
 
           {/* Note */}
           {tx.note && (
@@ -280,25 +281,38 @@ export default function ContactLedger({ profile }) {
   const transactions = getContactTransactions(id);
   const netBalance   = getContactBalance(id);
 
-  // ── WhatsApp nudge ─────────────────────────────────────────────
+  // ── Communication ─────────────────────────────────────────────
   const handleWhatsApp = useCallback(() => {
     if (!contact) return;
     if (!contact.phone) { setShowPhonePrompt(true); return; }
 
-    const sign    = netBalance > 0 ? '' : '-';
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
     const message = netBalance > 0
-      ? `Hi ${contact.name}, just a gentle nudge! You have a pending balance of ₹${absAmt} with me. You can settle it via UPI: ${profile?.upiId ?? 'my UPI'}. Thanks! — Sent via VOID`
-      : `Hi ${contact.name}, a quick update — I owe you ₹${absAmt}. I'll settle it soon via UPI: ${profile?.upiId ?? 'my UPI'}. — Sent via VOID`;
+      ? `Hi ${contact.name}, just a gentle nudge! You have a pending balance of ₹${absAmt} with me. You can settle it via UPI: ${profile?.upiId ?? 'my UPI'}. Thanks! — and hey from manthan via VOID`
+      : `Hi ${contact.name}, a quick update — I owe you ₹${absAmt}. I'll settle it soon via UPI: ${profile?.upiId ?? 'my UPI'}. — and hey from manthan via VOID`;
 
     window.open(buildWhatsAppUrl(contact.phone, message), '_blank');
+  }, [contact, netBalance, profile]);
+
+  const handleSMS = useCallback(() => {
+    if (!contact) return;
+    if (!contact.phone) { setShowPhonePrompt(true); return; }
+
+    const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
+    const message = netBalance > 0
+      ? `Hi ${contact.name}, gentle nudge! Pending: ₹${absAmt}. UPI: ${profile?.upiId ?? 'my UPI'}. — and hey from manthan via VOID`
+      : `Hi ${contact.name}, I owe you ₹${absAmt}. Settling soon. — and hey from manthan via VOID`;
+
+    const encoded = encodeURIComponent(message);
+    // iOS uses &body= while Android uses ?body=. Target iOS as per requirement.
+    window.open(`sms:${contact.phone}&body=${encoded}`, '_self');
   }, [contact, netBalance, profile]);
 
   // After phone prompt saves, re-trigger WhatsApp
   const handlePhoneSaved = useCallback((phone) => {
     setShowPhonePrompt(false);
     const absAmt  = Math.abs(netBalance).toLocaleString('en-IN');
-    const message = `Hi ${contact.name}, just a gentle nudge! Pending balance: ₹${absAmt}. Settle via: ${profile?.upiId ?? 'my UPI'}. — Sent via VOID`;
+    const message = `Hi ${contact.name}, just a gentle nudge! Pending balance: ₹${absAmt}. Settle via: ${profile?.upiId ?? 'my UPI'}. — and hey from manthan via VOID`;
     window.open(buildWhatsAppUrl(phone, message), '_blank');
   }, [contact, netBalance, profile]);
 
@@ -374,25 +388,18 @@ export default function ContactLedger({ profile }) {
         </motion.h1>
 
         {/* Net balance */}
-        <motion.p
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className={[
-            'amount-display text-4xl font-bold tabular-nums tracking-[-0.03em] mt-1',
-            isGhostMode ? 'ghost' : '',
-            isPositive ? 'text-[#32D74B]' : isNegative ? 'text-[#FF453A]' : 'text-[#8E8E93]',
-          ].filter(Boolean).join(' ')}
+        <AmountDisplay
+          amount={netBalance}
+          showSign={true}
+          colored={true}
+          className="text-4xl font-bold tabular-nums tracking-[-0.03em] mt-1"
           style={{
             textShadow: isGhostMode ? 'none'
               : isPositive ? '0 0 40px rgba(50,215,75,0.35)'
               : isNegative ? '0 0 40px rgba(255,69,58,0.35)'
               : 'none',
           }}
-          aria-label={isGhostMode ? 'Balance hidden' : `Balance ₹${Math.abs(netBalance)}`}
-        >
-          {isPositive ? '+' : isNegative ? '−' : ''}
-          ₹{Math.abs(netBalance).toLocaleString('en-IN')}
-        </motion.p>
+        />
 
         <p className="text-[#3A3A3C] text-xs mt-1">
           {isPositive ? 'owes you' : isNegative ? 'you owe' : 'all settled'}
@@ -415,7 +422,20 @@ export default function ContactLedger({ profile }) {
             aria-label="Send WhatsApp nudge"
           >
             <MessageCircle size={13} strokeWidth={2} />
-            WhatsApp Nudge
+            WhatsApp
+          </motion.button>
+
+          {/* Messages */}
+          <motion.button
+            onClick={handleSMS}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-pill text-xs font-semibold cursor-pointer border select-none"
+            style={{ background: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.2)', color: '#0A84FF' }}
+            aria-label="Send SMS nudge"
+          >
+            <MessageCircle size={13} strokeWidth={2} />
+            Messages
           </motion.button>
 
           {/* PDF */}

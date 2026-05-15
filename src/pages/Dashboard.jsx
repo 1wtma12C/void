@@ -76,12 +76,11 @@ function HeroBalance({ globalNetBalance, txCount }) {
           />
         )}
 
-        <p
-          className={[
-            'amount-display tabular-nums font-bold tracking-[-0.04em] leading-none',
-            isGhostMode ? 'ghost' : '',
-            isPositive ? 'text-[#32D74B]' : isNegative ? 'text-[#FF453A]' : 'text-[#8E8E93]',
-          ].filter(Boolean).join(' ')}
+        <AmountDisplay
+          amount={globalNetBalance}
+          showSign={true}
+          colored={true}
+          className="font-bold tracking-[-0.04em] leading-none"
           style={{
             fontSize: 'clamp(3rem, 14vw, 5.5rem)',
             textShadow: isGhostMode ? 'none'
@@ -89,11 +88,7 @@ function HeroBalance({ globalNetBalance, txCount }) {
               : isNegative ? '0 0 60px rgba(255,69,58,0.4)'
               : 'none',
           }}
-          aria-label={isGhostMode ? 'Amount hidden' : `Net balance ₹${Math.abs(globalNetBalance)}`}
-        >
-          {isPositive ? '+' : isNegative ? '-' : ''}
-          ₹{Math.abs(globalNetBalance).toLocaleString('en-IN')}
-        </p>
+        />
       </div>
 
       {/* Subtitle */}
@@ -194,17 +189,12 @@ function ContactCard({ contact, balance, lastTxDate }) {
 
       {/* Balance */}
       <div className="flex flex-col items-center mt-auto">
-        <span
-          className={[
-            'amount-display text-[13px] font-bold tabular-nums tracking-tight leading-none',
-            isGhostMode ? 'ghost' : '',
-            isPositive ? 'text-[#32D74B]' : isNegative ? 'text-[#FF453A]' : 'text-[#8E8E93]',
-          ].filter(Boolean).join(' ')}
-          aria-label={isGhostMode ? 'Amount hidden' : `Balance: ₹${Math.abs(balance)}`}
-        >
-          {isPositive ? '+' : isNegative ? '-' : ''}
-          {Math.abs(balance) > 99999 ? '₹99k+' : `₹${Math.abs(balance).toLocaleString('en-IN')}`}
-        </span>
+        <AmountDisplay
+          amount={balance}
+          showSign={true}
+          colored={true}
+          className="text-[13px] font-bold tabular-nums tracking-tight leading-none"
+        />
       </div>
     </motion.div>
   );
@@ -400,26 +390,6 @@ export default function Dashboard({ profile }) {
               </div>
             </section>
           )}
-        </motion.div>
-      )}
-
-      {/* ── Add Contact shortcut ──────────────────────────────── */}
-      {hasContacts && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex justify-center mt-8 mb-2"
-        >
-          <motion.button
-            onClick={() => openModal()}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="flex items-center gap-2 text-[#3A3A3C] text-xs font-medium cursor-pointer select-none"
-          >
-            <UserPlus size={13} strokeWidth={1.75} />
-            Add new contact or transaction
-          </motion.button>
         </motion.div>
       )}
     </div>

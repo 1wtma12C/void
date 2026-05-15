@@ -1,17 +1,9 @@
 /**
- * VOID — AmountDisplay
+ * VOID — AmountDisplay (V1.3)
  * ─────────────────────────────────────────────────────────────
- * Wraps any monetary amount. When Ghost Mode is active, applies
- * blur-md + opacity-50 so numbers are unreadable but layout holds.
- *
- * Props:
- *   value      — number (the raw amount in base currency)
- *   currency   — string (default 'INR')
- *   className  — additional Tailwind classes
- *   colored    — boolean: if true, colors positive as green, negative as red
- *   size       — 'hero' | 'title' | 'head' | 'body' | 'caption'
- *   showSign   — boolean: prefix with + or - (default false)
- *   prefix     — string: manual prefix (e.g. '₹', '+', '-')
+ * The universal source of truth for all monetary values.
+ * Replaces numbers with poetic words in Ghost Mode while
+ * strictly maintaining semantic colors.
  */
 
 import { useGhost } from '../../contexts/GhostContext';
@@ -23,12 +15,17 @@ const CURRENCY_SYMBOLS = {
   GBP: '£',
 };
 
-/** Format a number as a locale-aware currency string */
+const WORDS = [
+  "Butterfly", "Nebula", "Quantum", "Echo", "Zenith", 
+  "Orbit", "Velvet", "Atlas", "Solace", "Flux", 
+  "Aether", "Loom", "Vortex", "Pulse", "Eon", 
+  "Haze", "Prism", "Lumina", "Nova", "Stellar"
+];
+
 export function formatCurrency(value, currency = 'INR') {
   const absVal = Math.abs(value);
   const symbol = CURRENCY_SYMBOLS[currency] ?? currency;
 
-  // Compact notation for very large numbers
   if (absVal >= 1_00_000) {
     return `${symbol}${(absVal / 1_00_000).toFixed(2)}L`;
   }
@@ -39,50 +36,50 @@ export function formatCurrency(value, currency = 'INR') {
 }
 
 export default function AmountDisplay({
-  value = 0,
+  amount = 0,
+  type = null, // 'LENT' | 'RECEIVED' | null
   currency = 'INR',
   className = '',
   colored = false,
   showSign = false,
   prefix = '',
+  isGhostMode: manualGhost,
+  style = {},
 }) {
-  const { isGhostMode } = useGhost();
+  const { isGhostMode: contextGhost } = useGhost();
+  const activeGhost = manualGhost ?? contextGhost;
   
-  const GHOST_WORDS = [
-    "Butterfly", "Nebula", "Quantum", "Echo", "Zenith", 
-    "Orbit", "Velvet", "Atlas", "Solace", "Flux", 
-    "Aether", "Loom", "Vortex", "Pulse", "Eon", 
-    "Haze", "Prism", "Lumina", "Nova", "Stellar"
-  ];
+  const wordIndex = Math.abs(Math.round(amount)) % WORDS.length;
+  const ghostWord = WORDS[wordIndex];
 
-  // Pick a stable word based on the value to avoid flickering on every re-render
-  const wordIndex = Math.abs(Math.round(value)) % GHOST_WORDS.length;
-  const ghostWord = GHOST_WORDS[wordIndex];
+  const formatted = formatCurrency(amount, currency);
+  const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
+  const display = activeGhost ? ghostWord : `${prefix}${sign}${formatted}`;
 
-  const formatted = formatCurrency(value, currency);
-  const sign = showSign && value !== 0 ? (value > 0 ? '+' : '-') : '';
-  const display = isGhostMode ? ghostWord : `${prefix}${sign}${formatted}`;
-
-  // Color classes when colored=true
-  const colorClass = colored
-    ? value > 0
-      ? 'text-[#32D74B]'
-      : value < 0
-      ? 'text-[#FF453A]'
-      : 'text-[#8E8E93]'
-    : '';
+  // Determine color based on type (if provided) or amount sign
+  let colorClass = '';
+  if (colored) {
+    if (type === 'LENT' || (type === null && amount < 0)) {
+      colorClass = 'text-[#FF453A]'; // Crimson
+    } else if (type === 'RECEIVED' || (type === null && amount > 0)) {
+      colorClass = 'text-[#32D74B]'; // Aurora Green
+    } else {
+      colorClass = 'text-[#8E8E93]'; // Gray
+    }
+  }
 
   return (
     <span
       className={[
-        'amount-display inline-block tabular-nums',
-        isGhostMode ? 'ghost' : '',
+        'amount-display inline-block tabular-nums transition-all duration-300',
+        activeGhost ? 'ghost' : '',
         colorClass,
         className,
       ]
         .filter(Boolean)
         .join(' ')}
-      aria-label={isGhostMode ? 'Amount hidden' : display}
+      style={style}
+      aria-label={activeGhost ? 'Amount hidden' : display}
     >
       {display}
     </span>

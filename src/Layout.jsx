@@ -200,20 +200,12 @@ export default function Layout({ children }) {
 
       {/* ── Bottom Dock ────────────────────────────────────────── */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-4"
-        style={{
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
-          paddingTop:    '16px',
-          paddingLeft:   'env(safe-area-inset-left)',
-          paddingRight:  'env(safe-area-inset-right)',
-          background:    'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0) 100%)',
-          boxShadow:     '0 -1px 0 rgba(255,255,255,0.04)',
-        }}
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center gap-4 pb-safe pt-4 bg-black/40 backdrop-blur-xl border-t border-white/10"
         aria-label="Transaction dock"
       >
         <DockFAB
           type={TX_TYPE.LENT}
-          onClick={() => openModal(TX_TYPE.LENT, currentContact)}
+          onClick={() => openModal(TX_TYPE.LENT, currentContact, isContactPage ? 'ledger' : 'home')}
         />
 
         {/* Center: Cmd+K hint (desktop only) */}
@@ -223,7 +215,7 @@ export default function Layout({ children }) {
 
         <DockFAB
           type={TX_TYPE.RECEIVED}
-          onClick={() => openModal(TX_TYPE.RECEIVED, currentContact)}
+          onClick={() => openModal(TX_TYPE.RECEIVED, currentContact, isContactPage ? 'ledger' : 'home')}
         />
       </nav>
 

@@ -29,6 +29,7 @@ function VaultDashboard() {
   const [currentPinInput, setCurrentPinInput] = useState('');
   const [newPinInput, setNewPinInput] = useState('');
   const [pinError, setPinError] = useState('');
+  const [confirmItem, setConfirmItem] = useState(null);
 
   const handleSaveProfile = async () => {
     await saveProfile({ name, phone, upiId: upi });
@@ -155,7 +156,7 @@ function VaultDashboard() {
                       <button onClick={() => restoreContact(c.id)} className="text-[#32D74B] p-2 bg-[#32D74B]/10 rounded-full" aria-label="Restore">
                         <RefreshCw size={14} />
                       </button>
-                      <button onClick={() => { if(confirm('Permanently delete?')) hardDeleteContact(c.id) }} className="text-[#FF453A] p-2 bg-[#FF453A]/10 rounded-full" aria-label="Permanent Delete">
+                      <button onClick={() => setConfirmItem({ type: 'contact', action: 'delete', id: c.id })} className="text-[#FF453A] p-2 bg-[#FF453A]/10 rounded-full" aria-label="Permanent Delete">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -188,7 +189,7 @@ function VaultDashboard() {
                         <button onClick={() => restoreTransaction(t.id)} className="text-[#32D74B] p-2 bg-[#32D74B]/10 rounded-full">
                           <RefreshCw size={14} />
                         </button>
-                        <button onClick={() => { if(confirm('Permanently delete?')) hardDeleteTransaction(t.id) }} className="text-[#FF453A] p-2 bg-[#FF453A]/10 rounded-full">
+                        <button onClick={() => setConfirmItem({ type: 'transaction', action: 'delete', id: t.id })} className="text-[#FF453A] p-2 bg-[#FF453A]/10 rounded-full">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -199,6 +200,26 @@ function VaultDashboard() {
             )}
           </section>
 
+          {/* Custom Confirm Modal for Recycle Bin */}
+          <ConfirmModal
+            isOpen={!!confirmItem}
+            title={confirmItem?.action === 'delete' ? 'Permanently Delete?' : 'Restore Item?'}
+            message={confirmItem?.action === 'delete' 
+              ? 'This action cannot be undone. The data will be erased from the void forever.'
+              : 'This will move the entry back to your active ledger.'
+            }
+            confirmText={confirmItem?.action === 'delete' ? 'Erase Forever' : 'Restore'}
+            isDestructive={confirmItem?.action === 'delete'}
+            onConfirm={async () => {
+              if (confirmItem.type === 'contact') {
+                await hardDeleteContact(confirmItem.id);
+              } else {
+                await hardDeleteTransaction(confirmItem.id);
+              }
+              setConfirmItem(null);
+            }}
+            onCancel={() => setConfirmItem(null)}
+          />
         </motion.div>
       )}
     </div>
@@ -240,13 +261,12 @@ export default function AdminVault() {
   return (
     <div className="flex flex-col min-h-dvh w-full max-w-md mx-auto relative">
       
-      {/* Header */}
+      {/* Header (Only show if authenticated or specifically as an exit) */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
         <button onClick={() => navigate('/')} className="text-[#8E8E93] p-2 -ml-2" aria-label="Go back">
           <ArrowLeft size={20} />
         </button>
         
-        {/* Central VOID Logo (Exit Button) */}
         <motion.span
           onClick={() => {
             setIsAuthenticated(false);
@@ -258,7 +278,7 @@ export default function AdminVault() {
           VOID
         </motion.span>
 
-        <div className="w-8" /> {/* Spacer */}
+        <div className="w-8" />
       </div>
 
       <AnimatePresence mode="wait">
@@ -287,7 +307,7 @@ export default function AdminVault() {
             </motion.div>
 
             {/* Keypad */}
-            <div className="grid grid-cols-3 gap-y-6 gap-x-12 w-full max-w-[280px]">
+            <div className="grid grid-cols-3 gap-y-6 gap-x-12 w-full max-w-[280px] mb-8">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                 <button
                   key={num}
@@ -311,12 +331,20 @@ export default function AdminVault() {
                 <ArrowLeft size={24} />
               </button>
             </div>
+
+            <button
+              onClick={() => navigate('/')}
+              className="text-[#8E8E93] text-sm font-medium hover:text-white transition-colors"
+            >
+              [ Cancel ]
+            </button>
           </motion.div>
         ) : (
           <motion.div
             key="dashboard"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
             className="flex-1 flex flex-col w-full"
           >
             <VaultDashboard />
