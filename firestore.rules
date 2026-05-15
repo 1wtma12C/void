@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── userProfile ─────────────────────────────────────────────
+    // Only the singleton 'owner_doc' is readable/writable.
+    // In a multi-user app you'd lock this by auth UID.
+    match /userProfile/{docId} {
+      allow read, write: if docId == 'owner_doc';
+    }
+
+    // ── contacts ────────────────────────────────────────────────
+    match /contacts/{contactId} {
+      allow read, write: if true;
+      // TODO: Lock to authenticated user when Firebase Auth is added:
+      // allow read, write: if request.auth != null;
+    }
+
+    // ── transactions ────────────────────────────────────────────
+    match /transactions/{txId} {
+      allow read, write: if true;
+      // TODO: Lock to authenticated user when Firebase Auth is added:
+      // allow read, write: if request.auth != null;
+
+      // Validation: amount must be positive, type must be LENT or RECEIVED
+      // allow create: if request.resource.data.amount > 0
+      //            && request.resource.data.type in ['LENT', 'RECEIVED']
+      //            && request.resource.data.contactId is string;
+    }
+  }
+}
