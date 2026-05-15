@@ -280,25 +280,6 @@ export default function AdminVault() {
     <div className="flex flex-col min-h-dvh w-full max-w-md mx-auto relative">
       
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
-        <button onClick={() => navigate('/')} className="text-[#8E8E93] p-2 -ml-2" aria-label="Go back">
-          <ArrowLeft size={20} />
-        </button>
-        
-        {/* Central VOID Logo (Exit Button) */}
-        <motion.span
-          onClick={() => {
-            setIsAuthenticated(false);
-            navigate('/');
-          }}
-          whileTap={{ scale: 0.95 }}
-          className="text-xl font-bold tracking-[-0.04em] text-[#F5F5F7] cursor-pointer select-none"
-        >
-          VOID
-        </motion.span>
-
-        <div className="w-8" /> {/* Spacer */}
-      </div>
 
       <AnimatePresence mode="wait">
         {!isAuthenticated ? (

@@ -1,18 +1,21 @@
 import { useState } from 'react';
-import { Bell, X, Calendar } from 'lucide-react';
+import { Bell, X, Calendar, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * ReminderModal
  * ─────────────────────────────────────────────────────────────
  * A premium frosted glass modal for scheduling follow-ups.
+ * Styled with semantic Aurora Green and Crimson Nebula.
  */
 export default function ReminderModal({ isOpen, onClose, onSave, contactName }) {
-  const [date, setDate] = useState('');
+  const [datePart, setDatePart] = useState('');
+  const [timePart, setTimePart] = useState('');
 
   const handleSave = () => {
-    if (!date) return;
-    onSave(new Date(date).getTime());
+    if (!datePart || !timePart) return;
+    const dt = new Date(`${datePart}T${timePart}`);
+    onSave(dt.getTime());
     onClose();
   };
 
@@ -47,19 +50,37 @@ export default function ReminderModal({ isOpen, onClose, onSave, contactName }) 
               </p>
             </div>
 
-            <div className="w-full flex flex-col gap-2">
-              <label className="text-[10px] text-[#3A3A3C] uppercase font-bold px-1 tracking-widest">Select Date & Time</label>
-              <div className="relative">
-                <input
-                  type="datetime-local"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-5 text-sm text-white outline-none focus:border-white/20 transition-all color-scheme-dark"
-                />
+            <div className="w-full flex flex-col gap-4">
+              {/* Date Input */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] text-[#3A3A3C] uppercase font-bold px-1 tracking-widest">Follow-up Date</label>
+                <div className="relative group bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3 color-scheme-dark">
+                  <Calendar size={18} className="text-[#32D74B]" />
+                  <input
+                    type="date"
+                    value={datePart}
+                    onChange={(e) => setDatePart(e.target.value)}
+                    className="flex-1 bg-transparent text-sm text-[#32D74B] font-semibold outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Time Input */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] text-[#3A3A3C] uppercase font-bold px-1 tracking-widest">Follow-up Time</label>
+                <div className="relative group bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3 color-scheme-dark">
+                  <Clock size={18} className="text-[#FF453A]" />
+                  <input
+                    type="time"
+                    value={timePart}
+                    onChange={(e) => setTimePart(e.target.value)}
+                    className="flex-1 bg-transparent text-sm text-[#FF453A] font-semibold outline-none transition-all"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex w-full gap-3">
+            <div className="flex w-full gap-3 mt-2">
               <button
                 onClick={onClose}
                 className="flex-1 py-3.5 rounded-2xl text-sm font-semibold text-[#8E8E93] bg-white/5 hover:bg-white/10 transition-colors"
@@ -68,7 +89,7 @@ export default function ReminderModal({ isOpen, onClose, onSave, contactName }) 
               </button>
               <button
                 onClick={handleSave}
-                disabled={!date}
+                disabled={!datePart || !timePart}
                 className="flex-1 py-3.5 rounded-2xl text-sm font-bold text-black bg-white hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Set Reminder

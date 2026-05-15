@@ -69,6 +69,7 @@ export default function Layout({ children }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const isContactPage    = location.pathname.startsWith('/contact/');
+  const isVaultPage      = location.pathname === '/vault';
   const currentContactId = isContactPage ? location.pathname.split('/')[2] : null;
   const currentContact   = contacts.find(c => c.id === currentContactId);
 
@@ -98,7 +99,7 @@ export default function Layout({ children }) {
           background:    'linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0) 100%)',
         }}
       >
-        {/* Left: back arrow on sub-pages, Ghost mode on root */}
+        {/* Left: back arrow on sub-pages (not vault), Ghost mode on root */}
         <div className="flex-1 flex justify-start items-center">
           {isContactPage ? (
             <motion.button
@@ -111,6 +112,9 @@ export default function Layout({ children }) {
               <ArrowLeft size={18} strokeWidth={2} />
               <span className="text-sm font-medium">Ledger</span>
             </motion.button>
+          ) : isVaultPage ? (
+            /* Hide back button in Vault */
+            <div className="w-9 h-9" />
           ) : (
             <motion.button
               onClick={toggleGhost}
@@ -147,10 +151,10 @@ export default function Layout({ children }) {
           )}
         </div>
 
-        {/* Center: Absolute VOID Wordmark (Hidden Vault Trigger) */}
+        {/* Center: Absolute VOID Wordmark (Hidden Vault Trigger / Exit) */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0px)' }}>
           <motion.span
-            onClick={() => navigate('/vault')}
+            onClick={() => navigate(isVaultPage ? '/' : '/vault')}
             whileTap={{ scale: 0.95 }}
             className="pointer-events-auto text-xl font-bold tracking-[-0.04em] text-[#F5F5F7] cursor-pointer select-none"
             style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif' }}
@@ -199,27 +203,29 @@ export default function Layout({ children }) {
       </main>
 
       {/* ── Bottom Floating Dock ────────────────────────────────── */}
-      <div className="fixed left-0 right-0 z-50 flex justify-center pointer-events-none bottom-4 pb-[env(safe-area-inset-bottom)] md:bottom-8">
-        <nav
-          className="pointer-events-auto flex items-center gap-4 px-4 py-2 rounded-full backdrop-blur-2xl bg-white/5 border border-white/10 shadow-2xl w-[90%] max-w-[340px]"
-          aria-label="Transaction dock"
-        >
-          <DockFAB
-            type={TX_TYPE.LENT}
-            onClick={() => openModal(TX_TYPE.LENT, currentContact)}
-          />
+      {!isVaultPage && (
+        <div className="fixed left-0 right-0 z-50 flex justify-center pointer-events-none bottom-4 pb-[env(safe-area-inset-bottom)] md:bottom-8">
+          <nav
+            className="pointer-events-auto flex items-center gap-4 px-4 py-2 rounded-full backdrop-blur-2xl bg-white/5 border border-white/10 shadow-2xl w-[90%] max-w-[340px]"
+            aria-label="Transaction dock"
+          >
+            <DockFAB
+              type={TX_TYPE.LENT}
+              onClick={() => openModal(TX_TYPE.LENT, currentContact)}
+            />
 
-          {/* Center: Cmd+K hint (desktop only) */}
-          <span className="hidden md:block text-[10px] text-[#3A3A3C] font-mono select-none">
-            ⌘K
-          </span>
+            {/* Center: Cmd+K hint (desktop only) */}
+            <span className="hidden md:block text-[10px] text-[#3A3A3C] font-mono select-none">
+              ⌘K
+            </span>
 
-          <DockFAB
-            type={TX_TYPE.RECEIVED}
-            onClick={() => openModal(TX_TYPE.RECEIVED, currentContact)}
-          />
-        </nav>
-      </div>
+            <DockFAB
+              type={TX_TYPE.RECEIVED}
+              onClick={() => openModal(TX_TYPE.RECEIVED, currentContact)}
+            />
+          </nav>
+        </div>
+      )}
 
       {/* Global Search Modal */}
       <Suspense fallback={null}>

@@ -167,11 +167,11 @@ function TimelineEntry({ tx, ghostIndex }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-        className="relative flex flex-col items-center justify-center w-full overflow-hidden"
+        className="relative flex flex-col items-center justify-center w-full px-4 py-1.5"
       >
         {/* Swipe-to-delete Crimson Nebula Layer (Background) */}
         <div 
-          className="absolute inset-0 bg-[#FF453A] flex items-center justify-end px-8 z-0 cursor-pointer overflow-hidden"
+          className="absolute inset-y-1.5 inset-x-4 bg-[#FF453A] flex items-center justify-end px-8 z-0 cursor-pointer overflow-hidden rounded-2xl"
           onClick={() => setShowConfirm(true)}
         >
           <motion.div
@@ -184,7 +184,7 @@ function TimelineEntry({ tx, ghostIndex }) {
           </motion.div>
         </div>
 
-        {/* Draggable Row content (Foreground - Native iOS Style) */}
+        {/* Draggable Row content (Foreground - Liquid Smoked Glass) */}
         <motion.div
           drag="x"
           dragConstraints={{ left: -80, right: 0 }}
@@ -194,11 +194,11 @@ function TimelineEntry({ tx, ghostIndex }) {
               setShowConfirm(true);
             }
           }}
-          className="relative z-10 bg-black w-full px-6 py-4 flex flex-row justify-between items-center border-b border-white/5 last:border-0 cursor-grab active:cursor-grabbing"
+          className="relative z-10 w-full px-6 py-4 flex flex-row justify-between items-center cursor-grab active:cursor-grabbing bg-[#0a0a0a]/80 backdrop-blur-2xl rounded-2xl border border-white/5 shadow-lg"
         >
           {/* Left Side: Metadata (Date & Note) */}
           <div className="flex flex-col items-start gap-1 max-w-[70%]">
-            <p className="text-[#8E8E93] text-sm uppercase tracking-wider font-semibold">
+            <p className="text-[#8E8E93] text-[10px] uppercase tracking-[0.14em] font-bold">
               {formatRelativeDate(tx.date)}
             </p>
             {tx.note ? (
@@ -623,7 +623,7 @@ export default function ContactLedger({ profile }) {
           )}
         </motion.div>
       ) : (
-        <div className="flex flex-col pb-4">
+        <div className="flex flex-col pb-4 gap-2">
           {/* Date section divider label at top */}
           <div className="px-6 mb-2">
             <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[#3A3A3C]">
@@ -635,14 +635,14 @@ export default function ContactLedger({ profile }) {
             {(() => {
               let txIndex = 1;
               return Object.entries(grouped).map(([dateLabel, txs]) => (
-                <div key={dateLabel} className="flex flex-col mb-3">
+                <div key={dateLabel} className="flex flex-col mb-3 gap-2">
                   {/* Date divider */}
                   <div className="flex flex-col items-center justify-center px-4 mt-2 mb-1">
                     <p className="text-[10px] text-[#3A3A3C] font-semibold tracking-[0.14em] uppercase whitespace-nowrap">{dateLabel}</p>
                   </div>
 
                   {/* Entries for this date */}
-                  <div className="flex flex-col group">
+                  <div className="flex flex-col group gap-2">
                     {txs.map((tx) => (
                       <TimelineEntry
                         key={tx.id}
