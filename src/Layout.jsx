@@ -111,13 +111,12 @@ export default function Layout({ children }) {
 
       {/* ── Top Header ─────────────────────────────────────────── */}
       <header
-        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between"
+        className="sticky top-0 z-40 w-full flex items-center justify-between bg-black/50 backdrop-blur-2xl border-b border-white/5"
         style={{
           paddingTop:    'calc(env(safe-area-inset-top) + 12px)',
           paddingLeft:   'calc(env(safe-area-inset-left)  + 20px)',
           paddingRight:  'calc(env(safe-area-inset-right) + 20px)',
           paddingBottom: '12px',
-          background:    'linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0) 100%)',
         }}
       >
         {/* Left: back arrow on sub-pages (not vault), Ghost mode on root */}
@@ -203,7 +202,7 @@ export default function Layout({ children }) {
       <main
         className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24"
         style={{
-          paddingTop:    'calc(env(safe-area-inset-top)    + 64px)',
+          paddingTop:    '20px',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 90px)',
           paddingLeft:   'env(safe-area-inset-left)',
           paddingRight:  'env(safe-area-inset-right)',
