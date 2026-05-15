@@ -48,6 +48,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db, COLLECTIONS } from '../lib/firebase';
+import { calculateNetBalance } from '../lib/utils';
 
 // ── Transaction type constants ─────────────────────────────────
 export const TX_TYPE = Object.freeze({
@@ -95,11 +96,7 @@ export function useTransactions() {
    * Negative = you owe money (Crimson Nebula).
    */
   const globalNetBalance = useMemo(() => {
-    return transactions.reduce((acc, tx) => {
-      if (tx.type === TX_TYPE.LENT)     return acc + (tx.amount ?? 0);
-      if (tx.type === TX_TYPE.RECEIVED) return acc - (tx.amount ?? 0);
-      return acc;
-    }, 0);
+    return calculateNetBalance(transactions);
   }, [transactions]);
 
   // ── Derived: Per-Contact Balance Map ──────────────────────────
@@ -140,8 +137,11 @@ export function useTransactions() {
    * @returns {number}
    */
   const getContactBalance = useCallback(
-    (contactId) => contactBalanceMap.get(contactId)?.balance ?? 0,
-    [contactBalanceMap],
+    (contactId) => {
+      const contactTxs = transactions.filter((tx) => tx.contactId === contactId);
+      return calculateNetBalance(contactTxs);
+    },
+    [transactions],
   );
 
   /**

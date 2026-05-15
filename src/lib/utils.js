@@ -72,3 +72,20 @@ export function debounce(fn, delay = 300) {
     timer = setTimeout(() => fn(...args), delay);
   };
 }
+
+/**
+ * The absolute Single Source of Truth for the Math Engine.
+ * Takes an array of active transactions and returns the net balance.
+ * LENT (+) minus RECEIVED (-).
+ * @param {Array} transactionsArray 
+ * @returns {number}
+ */
+export function calculateNetBalance(transactionsArray) {
+  if (!transactionsArray || !Array.isArray(transactionsArray)) return 0;
+  
+  return transactionsArray.reduce((acc, tx) => {
+    if (tx.type === 'LENT')     return acc + (tx.amount ?? 0);
+    if (tx.type === 'RECEIVED') return acc - (tx.amount ?? 0);
+    return acc;
+  }, 0);
+}

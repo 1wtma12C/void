@@ -170,15 +170,15 @@ function TimelineEntry({ tx, ghostIndex }) {
         className="relative w-full rounded-2xl mb-2 overflow-hidden bg-black"
         style={{ transform: 'translateZ(0)' }}
       >
-        {/* Background (Trash Layer) - Strictly Right Anchored */}
+        {/* Background (Trash Layer) - Strictly Right Anchored with inset */}
         <div 
-          className="absolute right-0 inset-y-0 w-24 bg-[#FF453A] flex justify-center items-center z-0 cursor-pointer rounded-2xl"
+          className="absolute right-[1px] inset-y-0 w-24 bg-[#FF453A] flex justify-center items-center z-0 cursor-pointer rounded-2xl"
           onClick={() => setShowConfirm(true)}
         >
           <Trash2 size={20} className="text-white" />
         </div>
 
-        {/* Foreground (Solid Apple Surface) */}
+        {/* Foreground (Solid Apple Surface with Black Gasket) */}
         <motion.div
           drag="x"
           dragConstraints={{ left: -80, right: 0 }}
@@ -188,7 +188,7 @@ function TimelineEntry({ tx, ghostIndex }) {
               setShowConfirm(true);
             }
           }}
-          className="relative z-10 w-full p-4 rounded-2xl bg-[#1C1C1E] border border-white/5 shadow-lg flex flex-row justify-between items-center cursor-grab active:cursor-grabbing"
+          className="relative z-10 w-full p-4 rounded-2xl bg-[#1C1C1E] border-2 border-black shadow-lg flex flex-row justify-between items-center cursor-grab active:cursor-grabbing"
         >
           {/* Left Side: Metadata (Date & Note) - Strictly Space Gray / Off-white */}
           <div className="flex flex-col items-start gap-1 max-w-[70%]">
