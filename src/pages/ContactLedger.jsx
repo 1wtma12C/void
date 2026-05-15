@@ -167,11 +167,11 @@ function TimelineEntry({ tx, ghostIndex }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-        className="relative w-full rounded-2xl overflow-hidden mb-2 px-4"
+        className="relative w-full rounded-2xl mb-2 overflow-hidden bg-transparent"
       >
-        {/* Background (Trash Layer) - Masked by foreground glass until swipe */}
+        {/* Background (Trash Layer) - Strictly Right Anchored */}
         <div 
-          className="absolute inset-0 bg-[#FF453A] flex justify-end items-center px-10 z-0 cursor-pointer"
+          className="absolute right-0 top-0 bottom-0 w-24 bg-[#FF453A] flex justify-center items-center z-0"
           onClick={() => setShowConfirm(true)}
         >
           <Trash2 size={20} className="text-white" />
@@ -187,7 +187,7 @@ function TimelineEntry({ tx, ghostIndex }) {
               setShowConfirm(true);
             }
           }}
-          className="relative z-10 w-full p-4 flex flex-row justify-between items-center cursor-grab active:cursor-grabbing bg-white/5 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-lg"
+          className="relative z-10 w-full p-4 rounded-2xl bg-[#121212]/90 backdrop-blur-2xl border border-white/5 flex flex-row justify-between items-center shadow-lg"
         >
           {/* Left Side: Metadata (Date & Note) - Strictly Space Gray / Off-white */}
           <div className="flex flex-col items-start gap-1 max-w-[70%]">

@@ -172,7 +172,7 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
       onClick={() => navigate(`/contact/${contact.id}`)}
       whileTap={{ scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-      className="flex flex-col items-center justify-center p-3 cursor-pointer select-none rounded-[20px] aspect-square relative overflow-hidden group"
+      className="flex flex-col items-center justify-center text-center p-6 h-full min-h-[140px] cursor-pointer select-none rounded-[20px] relative overflow-hidden group"
       style={{
         background: 'rgba(255,255,255,0.03)',
         border: '1px solid rgba(255,255,255,0.05)',
@@ -186,7 +186,7 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
 
       {/* Avatar circle */}
       <div
-        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold mb-2 shadow-inner"
+        className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-semibold mb-3 shadow-inner"
         style={{
           background: isPositive
             ? 'rgba(50,215,75,0.12)'
@@ -200,22 +200,18 @@ function ContactCard({ contact, balance, lastTxDate, ghostIndex }) {
       </div>
 
       {/* Name */}
-      <div className="text-center w-full px-1 mb-1">
-        <p className="text-[#F5F5F7] text-[11px] font-medium tracking-tight truncate leading-tight group-hover:text-white transition-colors">
-          {displayName}
-        </p>
-      </div>
+      <p className="text-lg text-gray-300 mb-1 font-medium tracking-tight truncate w-full group-hover:text-white transition-colors">
+        {displayName}
+      </p>
 
       {/* Balance */}
-      <div className="flex flex-col items-center mt-auto">
-        <AmountDisplay
-          value={balance}
-          showSign={true}
-          colored={true}
-          ghostIndex={ghostIndex}
-          className="text-[13px] font-bold tracking-tight leading-none"
-        />
-      </div>
+      <AmountDisplay
+        value={balance}
+        showSign={true}
+        colored={true}
+        ghostIndex={ghostIndex}
+        className="text-2xl font-bold break-words w-full text-center leading-none"
+      />
     </motion.div>
   );
 }
@@ -399,7 +395,7 @@ export default function Dashboard({ profile }) {
           {oweYou.length > 0 && (
             <section aria-label="People who owe you">
               <Divider label={`Owed to you · ${oweYou.length}`} />
-              <div className="grid grid-cols-3 gap-3 px-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full max-w-7xl mx-auto px-4">
                 {oweYou.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
@@ -417,7 +413,7 @@ export default function Dashboard({ profile }) {
           {youOwe.length > 0 && (
             <section aria-label="People you owe" className={oweYou.length > 0 ? 'mt-6' : ''}>
               <Divider label={`You owe · ${youOwe.length}`} />
-              <div className="grid grid-cols-3 gap-3 px-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full max-w-7xl mx-auto px-4">
                 {youOwe.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
@@ -435,7 +431,7 @@ export default function Dashboard({ profile }) {
           {newEmpty.length > 0 && (
             <section aria-label="Recent contacts" className="mt-6">
               <Divider label="Recently Added" />
-              <div className="grid grid-cols-3 gap-3 px-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full max-w-7xl mx-auto px-4">
                 {newEmpty.map(({ contact, balance, lastTxDate }, index) => (
                   <ContactCard
                     key={contact.id}
