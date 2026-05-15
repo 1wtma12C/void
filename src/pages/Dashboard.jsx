@@ -68,7 +68,7 @@ function HeroBalance({ globalNetBalance, txCount }) {
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-      className="px-6 pt-4 pb-8 text-center select-none"
+      className="px-6 pt-4 pb-8 text-center select-none overflow-visible bg-transparent"
     >
       {/* Label */}
       <p className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#3A3A3C] mb-3">
@@ -76,12 +76,12 @@ function HeroBalance({ globalNetBalance, txCount }) {
       </p>
 
       {/* Giant balance number */}
-      <div className="relative flex justify-center items-center">
+      <div className="relative flex justify-center items-center overflow-visible">
         {/* The Ambient Light Layer */}
         {!isGhostMode && (
           <div 
-            className={`absolute w-3/4 h-3/4 ${glowColorClass} blur-[60px] opacity-30 z-0 pointer-events-none transition-colors duration-700`} 
-            style={{ transform: 'translateZ(0)' }}
+            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] ${glowColorClass} blur-[80px] opacity-25 z-0 pointer-events-none rounded-full`} 
+            style={{ transform: 'translate(-50%, -50%) translateZ(0)' }}
           />
         )}
 

@@ -458,7 +458,7 @@ export default function ContactLedger({ profile }) {
     <div className="flex flex-col min-h-full">
 
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="px-6 pt-2 pb-6 flex flex-col items-center justify-center text-center gap-2">
+      <div className="px-6 pt-2 pb-6 flex flex-col items-center justify-center text-center gap-2 overflow-visible bg-transparent">
         {/* Avatar */}
         <motion.div
           onClick={() => setShowEditModal(true)}
@@ -490,12 +490,12 @@ export default function ContactLedger({ profile }) {
           </motion.h1>
 
           {/* Dynamic Ambient Glow Wrapper */}
-          <div className="relative flex justify-center items-center">
+          <div className="relative flex justify-center items-center overflow-visible">
             {/* The Ambient Light Layer */}
             {!isGhostMode && (
               <div 
-                className={`absolute w-3/4 h-3/4 ${isPositive ? 'bg-[#32D74B]' : isNegative ? 'bg-[#FF453A]' : 'bg-white'} blur-[60px] opacity-30 z-0 pointer-events-none transition-colors duration-700`} 
-                style={{ transform: 'translateZ(0)' }}
+                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] ${isPositive ? 'bg-[#32D74B]' : isNegative ? 'bg-[#FF453A]' : 'bg-white'} blur-[80px] opacity-25 z-0 pointer-events-none rounded-full`} 
+                style={{ transform: 'translate(-50%, -50%) translateZ(0)' }}
               />
             )}
 
