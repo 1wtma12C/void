@@ -62,7 +62,7 @@ export function useUserProfile() {
 
   /**
    * Create or update the owner profile document.
-   * @param {{ name: string, upiId: string, baseCurrency?: string }} data
+   * @param {{ name: string, phone?: string, upiId?: string, baseCurrency?: string, vaultPin?: string }} data
    */
   const saveProfile = useCallback(async (data) => {
     try {
@@ -72,6 +72,7 @@ export function useUserProfile() {
         phone:        data.phone?.trim() || '',
         upiId:        data.upiId?.trim() || '',
         baseCurrency: data.baseCurrency ?? 'INR',
+        vaultPin:     data.vaultPin ?? profile?.vaultPin ?? '0000',
         updatedAt:    serverTimestamp(),
       };
       

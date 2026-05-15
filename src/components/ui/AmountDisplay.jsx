@@ -47,10 +47,21 @@ export default function AmountDisplay({
   prefix = '',
 }) {
   const { isGhostMode } = useGhost();
+  
+  const GHOST_WORDS = [
+    "Butterfly", "Nebula", "Quantum", "Echo", "Zenith", 
+    "Orbit", "Velvet", "Atlas", "Solace", "Flux", 
+    "Aether", "Loom", "Vortex", "Pulse", "Eon", 
+    "Haze", "Prism", "Lumina", "Nova", "Stellar"
+  ];
+
+  // Pick a stable word based on the value to avoid flickering on every re-render
+  const wordIndex = Math.abs(Math.round(value)) % GHOST_WORDS.length;
+  const ghostWord = GHOST_WORDS[wordIndex];
 
   const formatted = formatCurrency(value, currency);
   const sign = showSign && value !== 0 ? (value > 0 ? '+' : '-') : '';
-  const display = `${prefix}${sign}${formatted}`;
+  const display = isGhostMode ? ghostWord : `${prefix}${sign}${formatted}`;
 
   // Color classes when colored=true
   const colorClass = colored

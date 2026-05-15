@@ -116,8 +116,7 @@
   }
 
   .amount-display.ghost {
-    filter: blur(12px);
-    opacity: 0.4;
+    opacity: 0.8;
     user-select: none;
   }
 

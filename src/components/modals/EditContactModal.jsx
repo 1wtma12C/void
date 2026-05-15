@@ -105,7 +105,7 @@ export default function EditContactModal({ isOpen, contact, onClose, onDelete })
 
               {/* Fields */}
               <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4 w-full flex flex-col items-center gap-6">
-                <MagnifiedInput id="e-name"  icon={User}   label="Name"    value={name}  onChange={setName}  required autoFocus />
+                <MagnifiedInput id="e-name"  icon={User}   label="Name"    value={name}  onChange={setName}  required />
                 <MagnifiedInput id="e-phone" icon={Phone}  label="Mobile"  value={phone} onChange={setPhone} />
                 <MagnifiedInput id="e-email" icon={Mail}   label="Email"   value={email} onChange={setEmail} />
                 <MagnifiedInput id="e-upi"   icon={AtSign} label="UPI ID"  value={upi}   onChange={setUpi}   onKeyDown={(e) => e.key === 'Enter' && handleSave()} />

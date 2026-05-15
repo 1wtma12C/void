@@ -90,41 +90,73 @@ export default function InputModal() {
 
   const isValid = Number(amount) > 0 && name.trim().length >= 2;
 
+  // Contact suggestions
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Update name and suggestions
+  const handleNameChange = (val) => {
+    setName(val);
+    if (val.trim().length >= 1) {
+      const matches = contacts.filter(c => 
+        c.name.toLowerCase().includes(val.toLowerCase())
+      );
+      setSuggestions(matches);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectSuggestion = (c) => {
+    setName(c.name);
+    setPhone(c.phone || '');
+    setEmail(c.email || '');
+    setUpi(c.upiId || '');
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
+
   const handleSubmit = useCallback(async () => {
     if (!isValid || loading) return;
     setLoading(true);
     setError('');
     
-    console.log('[DEBUG] Starting handleSubmit...');
     try {
-      // 1. Upsert Contact (returns ID)
-      console.log('[DEBUG] Calling upsertContact...');
-      const contactId = await upsertContact({
-        name,
-        phone,
-        email,
-        upiId: upi,
-      });
-      console.log('[DEBUG] upsertContact finished. contactId:', contactId);
+      // 1. Deduplication Logic: Check for exact case-insensitive match
+      const existingContact = contacts.find(c => c.name.toLowerCase() === name.trim().toLowerCase());
+      let contactId;
 
-      // 2. Add Transaction
-      console.log('[DEBUG] Calling addTransaction...');
+      if (existingContact) {
+        // Use existing contact ID, but maybe update their details if they were empty? 
+        // For simplicity, we just use the ID.
+        contactId = existingContact.id;
+      } else {
+        // 2. Upsert Contact (returns ID)
+        contactId = await upsertContact({
+          name: name.trim(),
+          phone,
+          email,
+          upiId: upi,
+        });
+      }
+
+      // 3. Add Transaction
       await addTransaction({
         contactId,
         amount: Number(amount),
         type: txType,
         note: note.trim()
       });
-      console.log('[DEBUG] addTransaction finished.');
 
-      console.log('[DEBUG] Closing modal...');
       closeModal();
     } catch (err) {
       console.error('[VOID] Submit Error:', err);
       setError('Could not record transaction. Check your connection.');
       setLoading(false);
     }
-  }, [amount, name, phone, email, upi, note, txType, loading, isValid, upsertContact, addTransaction, closeModal]);
+  }, [amount, name, phone, email, upi, note, txType, loading, isValid, upsertContact, addTransaction, closeModal, contacts]);
 
   return (
     <AnimatePresence>
@@ -178,18 +210,40 @@ export default function InputModal() {
               
               <TypeToggle value={txType} onChange={setTxType} />
               
-              <div className="w-full flex flex-col gap-5 max-w-sm mx-auto mb-6">
+              <div className="w-full flex flex-col gap-5 max-w-sm mx-auto mb-6 relative">
                 <MagnifiedInput
                   id="unified-name"
                   icon={User}
                   label="Contact Name"
                   required={true}
                   value={name}
-                  onChange={setName}
+                  onChange={handleNameChange}
                   placeholder="e.g. Rahul Sharma"
-                  list="contact-names"
-                  autoFocus
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 />
+
+                {/* Custom Suggestions Dropdown */}
+                <AnimatePresence>
+                  {showSuggestions && suggestions.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full left-0 right-0 z-[100] mt-1 glass-modal rounded-xl overflow-hidden shadow-2xl"
+                    >
+                      {suggestions.slice(0, 5).map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => selectSuggestion(c)}
+                          className="w-full text-left px-4 py-3 border-b border-white/5 last:border-0 active:bg-white/10 flex items-center justify-between"
+                        >
+                          <span className="text-[#F5F5F7] text-sm font-medium">{c.name}</span>
+                          <span className="text-[#8E8E93] text-[10px]">Existing</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <div className="w-full flex flex-col gap-5 max-w-sm mx-auto">
@@ -269,13 +323,6 @@ export default function InputModal() {
               </motion.button>
             </div>
           </motion.div>
-
-          {/* Datalist for searchable contacts */}
-          <datalist id="contact-names">
-            {contacts.map((c) => (
-              <option key={c.id} value={c.name} />
-            ))}
-          </datalist>
         </>
       )}
     </AnimatePresence>

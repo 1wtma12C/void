@@ -24,13 +24,41 @@ function VaultDashboard() {
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [upi, setUpi]     = useState(profile?.upiId ?? '');
 
+  const [isChangingPin, setIsChangingPin] = useState(false);
+  const [pinStep, setPinStep] = useState(1); // 1: Current, 2: New
+  const [currentPinInput, setCurrentPinInput] = useState('');
+  const [newPinInput, setNewPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+
   const handleSaveProfile = async () => {
     await saveProfile({ name, phone, upiId: upi });
     alert('Profile updated successfully.');
   };
 
+  const handlePinChange = async () => {
+    if (pinStep === 1) {
+      if (currentPinInput === (profile?.vaultPin || '0000')) {
+        setPinStep(2);
+        setPinError('');
+      } else {
+        setPinError('Incorrect current password.');
+      }
+    } else {
+      if (newPinInput.length === 4) {
+        await saveProfile({ ...profile, vaultPin: newPinInput });
+        alert('Password changed successfully.');
+        setIsChangingPin(false);
+        setPinStep(1);
+        setCurrentPinInput('');
+        setNewPinInput('');
+      } else {
+        setPinError('New password must be 4 digits.');
+      }
+    }
+  };
+
   return (
-    <div className="w-full flex flex-col gap-6 px-6">
+    <div className="w-full flex flex-col gap-6 px-6 pt-20">
       <div className="flex gap-2 p-1 rounded-full bg-white/[0.04] border border-white/10 w-full max-w-[240px] mx-auto">
         <button
           onClick={() => setActiveTab('recycle')}
@@ -51,12 +79,58 @@ function VaultDashboard() {
           <MagnifiedInput id="v-name" icon={User} label="Your Name" value={name} onChange={setName} />
           <MagnifiedInput id="v-phone" label="Phone" value={phone} onChange={setPhone} />
           <MagnifiedInput id="v-upi" label="UPI ID" value={upi} onChange={setUpi} />
-          <button
-            onClick={handleSaveProfile}
-            className="mt-4 bg-[#F5F5F7] text-black font-semibold py-3 rounded-glass-sm w-full"
-          >
-            Update Profile
-          </button>
+          
+          <div className="mt-4 flex flex-col gap-3">
+            <button
+              onClick={handleSaveProfile}
+              className="bg-[#F5F5F7] text-black font-semibold py-3 rounded-glass-sm w-full"
+            >
+              Update Profile
+            </button>
+
+            {!isChangingPin ? (
+              <button
+                onClick={() => setIsChangingPin(true)}
+                className="bg-white/[0.05] border border-white/10 text-[#8E8E93] font-semibold py-3 rounded-glass-sm w-full"
+              >
+                [ Change Password ]
+              </button>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]"
+              >
+                <p className="text-[11px] font-semibold tracking-widest uppercase text-[#8E8E93] text-center">
+                  {pinStep === 1 ? 'Enter Current Password' : 'Enter New Password'}
+                </p>
+                <input
+                  type="password"
+                  maxLength={4}
+                  inputMode="numeric"
+                  value={pinStep === 1 ? currentPinInput : newPinInput}
+                  onChange={(e) => pinStep === 1 ? setCurrentPinInput(e.target.value) : setNewPinInput(e.target.value)}
+                  className="bg-transparent border-b border-white/20 text-center text-2xl font-bold tracking-widest py-2 outline-none"
+                  autoFocus
+                />
+                {pinError && <p className="text-[#FF453A] text-[10px] text-center">{pinError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setIsChangingPin(false); setPinStep(1); }}
+                    className="flex-1 py-2 text-xs font-semibold text-[#8E8E93]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePinChange}
+                    className="flex-1 py-2 text-xs font-semibold text-[#32D74B]"
+                  >
+                    {pinStep === 1 ? 'Next' : 'Save'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </motion.div>
       )}
 
@@ -134,12 +208,12 @@ function VaultDashboard() {
 // ── Admin Vault Page ──────────────────────────────────────────────
 export default function AdminVault() {
   const navigate = useNavigate();
+  const { profile } = useUserProfile();
   const [pin, setPin] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState(false);
 
-  // Hidden feature: hardcoded PIN for now.
-  const CORRECT_PIN = '0000';
+  const CORRECT_PIN = profile?.vaultPin || '0000';
 
   useEffect(() => {
     if (pin.length === 4) {
@@ -153,7 +227,7 @@ export default function AdminVault() {
         }, 500);
       }
     }
-  }, [pin]);
+  }, [pin, CORRECT_PIN]);
 
   const handleKeyPress = (num) => {
     if (pin.length < 4) setPin(p => p + num);
@@ -164,25 +238,37 @@ export default function AdminVault() {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh w-full max-w-md mx-auto pt-8">
+    <div className="flex flex-col min-h-dvh w-full max-w-md mx-auto relative">
       
       {/* Header */}
-      <div className="flex items-center justify-between px-6 mb-8 relative">
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
         <button onClick={() => navigate('/')} className="text-[#8E8E93] p-2 -ml-2" aria-label="Go back">
           <ArrowLeft size={20} />
         </button>
-        <span className="text-sm font-semibold tracking-widest uppercase text-[#F5F5F7]">Vault</span>
+        
+        {/* Central VOID Logo (Exit Button) */}
+        <motion.span
+          onClick={() => {
+            setIsAuthenticated(false);
+            navigate('/');
+          }}
+          whileTap={{ scale: 0.95 }}
+          className="text-xl font-bold tracking-[-0.04em] text-[#F5F5F7] cursor-pointer select-none"
+        >
+          VOID
+        </motion.span>
+
         <div className="w-8" /> {/* Spacer */}
       </div>
 
       <AnimatePresence mode="wait">
         {!isAuthenticated ? (
           <motion.div
-            key="pin"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex-1 flex flex-col items-center justify-center px-6"
+            key="pin-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center min-h-[100dvh] overflow-hidden px-6"
           >
             <div className="w-12 h-12 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-6">
               <Lock size={20} className="text-[#8E8E93]" />
