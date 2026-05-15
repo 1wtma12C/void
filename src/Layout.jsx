@@ -88,9 +88,6 @@ export default function Layout({ children }) {
     };
     window.addEventListener('focusin', handleFocusIn);
     window.addEventListener('focusout', handleFocusOut);
-    return () => {
-      window.removeEventListener('focusin', handleFocusIn);
-      window.removeEventListener('focusout', handleFocusOut);
     };
   }, []);
 
@@ -107,99 +104,106 @@ export default function Layout({ children }) {
   }, [openModal]);
 
   return (
-    <div className="flex flex-col min-h-dvh bg-black text-[#F5F5F7]">
+    <div className="flex flex-col min-h-dvh bg-black text-[#F5F5F7] overflow-y-auto overflow-x-hidden">
 
       {/* ── Top Header ─────────────────────────────────────────── */}
-      {/* ── Top Header ─────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-40 w-full flex items-center justify-between pointer-events-none"
-        style={{
-          paddingTop:    'calc(env(safe-area-inset-top) + 12px)',
-          paddingLeft:   'calc(env(safe-area-inset-left)  + 20px)',
-          paddingRight:  'calc(env(safe-area-inset-right) + 20px)',
-          paddingBottom: '12px',
-        }}
+        className="sticky top-0 z-40 w-full flex justify-center pt-[max(env(safe-area-inset-top),16px)] pointer-events-none bg-transparent overflow-visible"
       >
-        {/* Left: back arrow on sub-pages (not vault), Ghost mode on root */}
-        <div className="flex-1 flex justify-start items-center pointer-events-auto">
-          {isContactPage ? (
+        <div className="w-full flex items-center justify-between px-5 pb-3">
+          {/* Left: back arrow on sub-pages (not vault), Ghost mode on root */}
+          <div className="flex-1 flex justify-start items-center pointer-events-auto">
+            {isContactPage ? (
+              <motion.button
+                onClick={() => navigate(-1)}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                className="flex items-center gap-1.5 text-[#8E8E93] cursor-pointer select-none"
+                aria-label="Go back"
+              >
+                <ArrowLeft size={18} strokeWidth={2} />
+                <span className="text-sm font-medium">Ledger</span>
+              </motion.button>
+            ) : isVaultPage ? (
+              /* Hide back button in Vault */
+              <div className="w-9 h-9" />
+            ) : (
+              <motion.button
+                onClick={toggleGhost}
+                whileTap={{ scale: 0.88 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                aria-label={isGhostMode ? 'Disable ghost mode' : 'Enable ghost mode (hide amounts)'}
+                className="w-9 h-9 flex items-center justify-center rounded-full cursor-pointer select-none"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
+              >
+                <AnimatePresence mode="wait">
+                  {isGhostMode ? (
+                    <motion.span
+                      key="eye-off"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{    opacity: 0, scale: 0.7 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <EyeOff size={16} strokeWidth={1.75} className="text-[#FF453A]" />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="eye"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{    opacity: 0, scale: 0.7 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <Eye size={16} strokeWidth={1.75} className="text-[#8E8E93]" />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            )}
+          </div>
+
+          {/* Center: Floating Logo Pill (Dynamic Island Effect) */}
+          <div className="absolute inset-x-0 top-0 pointer-events-none flex items-center justify-center" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)' }}>
+            <div className="pointer-events-auto px-6 py-2 rounded-full bg-white/5 backdrop-blur-2xl border border-white/10 shadow-lg flex items-center justify-center">
+              <motion.span
+                onClick={() => navigate(isVaultPage ? '/' : '/vault')}
+                whileTap={{ scale: 0.95 }}
+                className="text-xl font-bold tracking-[-0.04em] text-[#F5F5F7] cursor-pointer select-none"
+                style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif' }}
+              >
+                VOID
+              </motion.span>
+            </div>
+          </div>
+
+          {/* Right: Search */}
+          <div className="flex-1 flex justify-end items-center pointer-events-auto">
             <motion.button
-              onClick={() => navigate(-1)}
-              whileTap={{ scale: 0.92 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className="flex items-center gap-1.5 text-[#8E8E93] cursor-pointer select-none"
-              aria-label="Go back"
-            >
-              <ArrowLeft size={18} strokeWidth={2} />
-              <span className="text-sm font-medium">Ledger</span>
-            </motion.button>
-          ) : isVaultPage ? (
-            /* Hide back button in Vault */
-            <div className="w-9 h-9" />
-          ) : (
-            <motion.button
-              onClick={toggleGhost}
+              onClick={() => setIsSearchOpen(true)}
               whileTap={{ scale: 0.88 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              aria-label={isGhostMode ? 'Disable ghost mode' : 'Enable ghost mode (hide amounts)'}
+              aria-label="Search"
               className="w-9 h-9 flex items-center justify-center rounded-full cursor-pointer select-none"
               style={{ background: 'rgba(255,255,255,0.06)' }}
             >
-              <AnimatePresence mode="wait">
-                {isGhostMode ? (
-                  <motion.span
-                    key="eye-off"
-                    initial={{ opacity: 0, scale: 0.7 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{    opacity: 0, scale: 0.7 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <EyeOff size={16} strokeWidth={1.75} className="text-[#FF453A]" />
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="eye"
-                    initial={{ opacity: 0, scale: 0.7 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{    opacity: 0, scale: 0.7 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <Eye size={16} strokeWidth={1.75} className="text-[#8E8E93]" />
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              <Search size={16} strokeWidth={2} className="text-[#8E8E93]" />
             </motion.button>
-          )}
-        </div>
-
-        {/* Center: Floating Logo Pill (Dynamic Island Effect) */}
-        <div className="absolute inset-x-0 top-0 pointer-events-none flex items-center justify-center" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)' }}>
-          <div className="pointer-events-auto px-6 py-2 rounded-full bg-white/5 backdrop-blur-2xl border border-white/10 shadow-lg flex items-center justify-center">
-            <motion.span
-              onClick={() => navigate(isVaultPage ? '/' : '/vault')}
-              whileTap={{ scale: 0.95 }}
-              className="text-xl font-bold tracking-[-0.04em] text-[#F5F5F7] cursor-pointer select-none"
-              style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif' }}
-            >
-              VOID
-            </motion.span>
           </div>
         </div>
+      </header>
 
-        {/* Right: Search */}
-        <div className="flex-1 flex justify-end items-center pointer-events-auto">
-          <motion.button
-            onClick={() => setIsSearchOpen(true)}
-            whileTap={{ scale: 0.88 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            aria-label="Search"
+      {/* ── Scrollable Page Content ─────────────────────────────── */}
+      <main
+        className="flex-1 relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24 overflow-visible"abel="Search"
             className="w-9 h-9 flex items-center justify-center rounded-full cursor-pointer select-none"
             style={{ background: 'rgba(255,255,255,0.06)' }}
           >
             <Search size={16} strokeWidth={2} className="text-[#8E8E93]" />
           </motion.button>
         </div>
-      </header>
+      </div>
+    </header>
 
       {/* ── Scrollable Page Content ─────────────────────────────── */}
       <main
