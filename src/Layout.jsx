@@ -199,12 +199,9 @@ export default function Layout({ children }) {
       </main>
 
       {/* ── Bottom Floating Dock ────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 pb-safe pt-4 pointer-events-none flex justify-center z-50">
+      <div className="fixed left-0 right-0 z-50 flex justify-center pointer-events-none bottom-4 pb-[env(safe-area-inset-bottom)] md:bottom-8">
         <nav
-          className="pointer-events-auto flex items-center gap-4 px-4 py-2 rounded-full backdrop-blur-2xl bg-white/5 border border-white/10 mb-6 shadow-2xl w-[90%] max-w-[340px]"
-          style={{
-            marginBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
-          }}
+          className="pointer-events-auto flex items-center gap-4 px-4 py-2 rounded-full backdrop-blur-2xl bg-white/5 border border-white/10 shadow-2xl w-[90%] max-w-[340px]"
           aria-label="Transaction dock"
         >
           <DockFAB

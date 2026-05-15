@@ -3,7 +3,8 @@
  * ─────────────────────────────────────────────────────────────
  * Shows one contact's complete transaction timeline.
  * Features: WhatsApp nudge, PDF export, Ghost mode pill,
- *           double-entry timeline, delete transaction.
+ *           double-entry timeline, delete transaction,
+ *           and reminders.
  */
 
 import { useRef, useCallback, useState, useMemo } from 'react';
@@ -11,7 +12,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence }        from 'framer-motion';
 import {
   MessageCircle, FileText, Eye, EyeOff,
-  Trash2, AlertCircle, Loader2, Phone, Edit2
+  Trash2, AlertCircle, Loader2, Phone, Edit2, Bell
 } from 'lucide-react';
 
 import { useContacts }               from '../hooks/useContacts';
@@ -23,6 +24,7 @@ import { formatDate, formatRelativeDate, buildWhatsAppUrl } from '../lib/utils';
 import { MagnifiedInput, AmountDisplay, SearchFilter } from '../components/ui';
 import EditContactModal from '../components/modals/EditContactModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
+import ReminderModal from '../components/modals/ReminderModal';
 
 // ── Constants ────────────────────────────────────────────────────
 const LEDGER_FILTERS = [
@@ -165,11 +167,11 @@ function TimelineEntry({ tx, ghostIndex }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{    opacity: 0, y: -8, transition: { duration: 0.15 } }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-        className="relative flex flex-col items-center justify-center px-4 py-1 w-full"
+        className="relative flex flex-col items-center justify-center px-4 py-1 w-full overflow-hidden rounded-xl"
       >
-        {/* Swipe-to-delete Crimson Nebula Layer */}
+        {/* Swipe-to-delete Crimson Nebula Layer (Background) */}
         <div 
-          className="absolute inset-y-1 right-4 left-4 rounded-2xl bg-[#FF453A] flex items-center justify-end px-8 z-0 cursor-pointer overflow-hidden"
+          className="absolute inset-0 bg-[#FF453A] flex items-center justify-end px-8 z-0 cursor-pointer overflow-hidden"
           onClick={() => setShowConfirm(true)}
         >
           <motion.div
@@ -182,7 +184,7 @@ function TimelineEntry({ tx, ghostIndex }) {
           </motion.div>
         </div>
 
-        {/* Draggable Row content */}
+        {/* Draggable Row content (Foreground) */}
         <motion.div
           drag="x"
           dragConstraints={{ left: -80, right: 0 }}
@@ -192,10 +194,10 @@ function TimelineEntry({ tx, ghostIndex }) {
               setShowConfirm(true);
             }
           }}
-          className="relative z-10 w-full cursor-grab active:cursor-grabbing"
+          className="relative z-10 w-full cursor-grab active:cursor-grabbing bg-black"
         >
           <div
-            className="relative w-full max-w-[92%] mx-auto rounded-2xl px-5 py-4 flex flex-row items-center justify-between group overflow-hidden bg-black"
+            className="relative w-full max-w-[92%] mx-auto rounded-2xl px-5 py-4 flex flex-row items-center justify-between group overflow-hidden"
             style={{
               background:  isLent ? 'rgba(255,69,58,0.06)'  : 'rgba(50,215,75,0.06)',
               border:      `1px solid ${isLent ? 'rgba(255,69,58,0.12)' : 'rgba(50,215,75,0.12)'}`,
@@ -309,13 +311,14 @@ function PhonePrompt({ contact, onClose, onSave }) {
 export default function ContactLedger({ profile }) {
   const { id }                              = useParams();
   const navigate                            = useNavigate();
-  const { getContact, softDeleteContact }   = useContacts();
+  const { getContact, softDeleteContact, updateContact }   = useContacts();
   const { getContactTransactions, getContactBalance, loading } = useTransactions();
   const { isGhostMode, toggleGhost }        = useGhost();
   const { openModal }                       = useInputModal();
 
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
   const [showEditModal,   setShowEditModal]   = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
   const [deleteLoading,   setDeleteLoading]   = useState(false);
   const [pdfLoading,      setPdfLoading]      = useState(false);
 
@@ -435,6 +438,16 @@ export default function ContactLedger({ profile }) {
     navigate('/');
   }, [contact, softDeleteContact, navigate]);
 
+  // ── Save Reminder ──────────────────────────────────────────────
+  const handleSaveReminder = useCallback(async (timestamp) => {
+    if (!contact) return;
+    await updateContact(contact.id, { reminderDate: timestamp });
+    // Trigger permission request if needed
+    if ('Notification' in window && Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+  }, [contact, updateContact]);
+
   // ── Group transactions by date ─────────────────────────────────
   const grouped = filteredTxs.reduce((acc, tx) => {
     const key = formatDate(tx.date) || 'Unknown';
@@ -539,6 +552,18 @@ export default function ContactLedger({ profile }) {
           >
             <Phone size={13} strokeWidth={2} />
             Messages
+          </motion.button>
+
+          {/* Reminder */}
+          <motion.button
+            onClick={() => setShowReminderModal(true)}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold cursor-pointer border border-white/20 bg-white/10 text-white select-none"
+            aria-label="Set Reminder"
+          >
+            <Bell size={13} strokeWidth={2} />
+            Reminder
           </motion.button>
 
           {/* PDF */}
@@ -653,6 +678,13 @@ export default function ContactLedger({ profile }) {
           />
         )}
       </AnimatePresence>
+
+      <ReminderModal
+        isOpen={showReminderModal}
+        contactName={contact?.name}
+        onClose={() => setShowReminderModal(false)}
+        onSave={handleSaveReminder}
+      />
 
       <EditContactModal
         isOpen={showEditModal}

@@ -7,15 +7,19 @@
  *   userProfile is created in Firestore
  * • Route definitions: / (Dashboard) and /contact/:id (Ledger)
  * • Global InputModal rendered here so it overlays all routes
+ * • Reminder Engine: Monitors contact reminderDate and triggers
+ *   native browser notifications.
  */
 
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion }              from 'framer-motion';
 import { Loader2 }                             from 'lucide-react';
+import { useEffect, useRef }                   from 'react';
 
 import { GhostProvider }                       from './contexts/GhostContext';
 import { InputModalProvider }                  from './contexts/InputModalContext';
 import { useUserProfile }                      from './hooks/useUserProfile';
+import { useContacts }                         from './hooks/useContacts';
 import Layout                                  from './Layout';
 
 // Lazy-load pages (code-split for performance)
@@ -70,6 +74,38 @@ function BootSplash() {
 // ── Inner app — needs router context for Layout ─────────────────
 function AppInner() {
   const { profile, loading, profileExists, saveProfile } = useUserProfile();
+  const { contacts, updateContact } = useContacts();
+  const notifiedIds = useRef(new Set());
+
+  // ── Reminder Engine ──────────────────────────────────────────
+  useEffect(() => {
+    if (!profileExists || !contacts.length) return;
+
+    const checkReminders = () => {
+      const now = Date.now();
+      contacts.forEach(contact => {
+        if (contact.reminderDate && now >= contact.reminderDate) {
+          // If already notified in this session, skip
+          if (notifiedIds.current.has(contact.id)) return;
+
+          // Trigger native notification
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('VOID Reminder', {
+              body: `Follow up with ${contact.name}`,
+              icon: '/icons/icon-192.png'
+            });
+            
+            // Mark as notified and clear from DB to prevent repeat
+            notifiedIds.current.add(contact.id);
+            updateContact(contact.id, { reminderDate: null });
+          }
+        }
+      });
+    };
+
+    const interval = setInterval(checkReminders, 15000); // Check every 15s
+    return () => clearInterval(interval);
+  }, [profileExists, contacts, updateContact]);
 
   // While Firebase is resolving the first onSnapshot — show boot splash
   if (loading) return <BootSplash />;
