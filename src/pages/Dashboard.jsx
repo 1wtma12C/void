@@ -24,7 +24,7 @@ import { useTransactions }  from '../hooks/useTransactions';
 import { useInputModal }    from '../contexts/InputModalContext';
 import { useGhost }         from '../contexts/GhostContext';
 import AmountDisplay, { formatCurrency } from '../components/ui/AmountDisplay';
-import { formatRelativeDate } from '../lib/utils';
+import { formatRelativeDate, calculateNetBalance } from '../lib/utils';
 import { SearchFilter } from '../components/ui';
 
 // ── Constants ────────────────────────────────────────────────────
@@ -287,6 +287,18 @@ export default function Dashboard({ profile }) {
 
   const isLoading = contactsLoading || txLoading;
 
+  // ── Bulletproof Math Engine (Defensive Filtering) ─────────────
+  const bulletproofGlobalBalance = useMemo(() => {
+    // 1. Get IDs of all active contacts (already filtered by useContacts hook)
+    const activeContactIds = new Set(contacts.map(c => c.id));
+    
+    // 2. Filter transactions: must belong to an active contact
+    const validTransactions = transactions.filter(t => activeContactIds.has(t.contactId));
+    
+    // 3. Pass ONLY validTransactions into the calculator
+    return calculateNetBalance(validTransactions);
+  }, [contacts, transactions]);
+
   // ── Build the visible contact list ────────────────────────────
   const visibleContacts = useMemo(() => {
     const now = Date.now();
@@ -360,7 +372,7 @@ export default function Dashboard({ profile }) {
 
       {/* ── Hero Balance ─────────────────────────────────────── */}
       <HeroBalance
-        globalNetBalance={globalNetBalance}
+        globalNetBalance={bulletproofGlobalBalance}
         txCount={transactions.length}
       />
 

@@ -127,22 +127,44 @@ export function useContacts() {
     }
   }, [contacts, updateContact, addContact]);
 
-  /**
-   * Soft delete a contact (move to recycle bin).
-   * @param {string} id
-   */
   const softDeleteContact = useCallback(async (id) => {
-    const ref = doc(db, COLLECTIONS.CONTACTS, id);
-    await updateDoc(ref, { isDeleted: true, deletedAt: serverTimestamp() });
+    const batch = writeBatch(db);
+    
+    // Soft delete the contact
+    const contactRef = doc(db, COLLECTIONS.CONTACTS, id);
+    batch.update(contactRef, { isDeleted: true, deletedAt: serverTimestamp() });
+
+    // Cascade soft delete to all transactions for this contact
+    const txQuery = query(
+      collection(db, COLLECTIONS.TRANSACTIONS),
+      where('contactId', '==', id)
+    );
+    const txSnap = await getDocs(txQuery);
+    txSnap.forEach((d) => {
+      batch.update(d.ref, { isDeleted: true, deletedAt: serverTimestamp() });
+    });
+
+    await batch.commit();
   }, []);
 
-  /**
-   * Restore a soft-deleted contact.
-   * @param {string} id
-   */
   const restoreContact = useCallback(async (id) => {
-    const ref = doc(db, COLLECTIONS.CONTACTS, id);
-    await updateDoc(ref, { isDeleted: false, deletedAt: null });
+    const batch = writeBatch(db);
+    
+    // Restore the contact
+    const contactRef = doc(db, COLLECTIONS.CONTACTS, id);
+    batch.update(contactRef, { isDeleted: false, deletedAt: null });
+
+    // Cascade restore to all transactions for this contact
+    const txQuery = query(
+      collection(db, COLLECTIONS.TRANSACTIONS),
+      where('contactId', '==', id)
+    );
+    const txSnap = await getDocs(txQuery);
+    txSnap.forEach((d) => {
+      batch.update(d.ref, { isDeleted: false, deletedAt: null });
+    });
+
+    await batch.commit();
   }, []);
 
   /**
