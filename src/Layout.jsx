@@ -107,11 +107,12 @@ export default function Layout({ children }) {
   }, [openModal]);
 
   return (
-    <div className="flex flex-col min-h-dvh bg-black text-[#F5F5F7] overflow-y-auto overflow-x-hidden">
+    <div className="relative flex flex-col min-h-dvh bg-black text-[#F5F5F7]">
 
       {/* ── Top Header ─────────────────────────────────────────── */}
       <header
-        className="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-4 pt-[max(env(safe-area-inset-top),16px)] pb-2 pointer-events-none bg-transparent"
+        className="fixed top-0 inset-x-0 z-[100] flex justify-between items-center px-4 pt-[max(env(safe-area-inset-top),16px)] pb-2 pointer-events-none bg-transparent"
+        style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)' }}
       >
         <div className="w-full flex items-center justify-between px-5 pb-3">
           {/* Left: back arrow on sub-pages (not vault), Ghost mode on root */}
@@ -198,7 +199,7 @@ export default function Layout({ children }) {
 
       {/* ── Scrollable Page Content ─────────────────────────────── */}
       <main
-        className="flex-1 relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24 overflow-visible pt-24"
+        className="flex-1 relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24 overflow-x-hidden pt-24"
         style={{
           paddingTop:    'calc(env(safe-area-inset-top) + 80px)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 90px)',
