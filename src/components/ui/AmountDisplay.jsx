@@ -14,7 +14,7 @@
  *   prefix     — string: manual prefix (e.g. '₹', '+', '-')
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGhost } from '../../contexts/GhostContext';
 
 const CURRENCY_SYMBOLS = {
@@ -64,9 +64,15 @@ export default function AmountDisplay({
 }) {
   const { isGhostMode, shuffledWords } = useGhost();
   const [isExpanded, setIsExpanded] = useState(false);
-  
-  // Pick a unique word from the shuffled array based on the index
-  const ghostWord = shuffledWords[ghostIndex % shuffledWords.length] || 'VOID';
+  const [ghostWord, setGhostWord] = useState('VOID');
+
+  // Listen for the toggle. Every time it turns ON, pick a fresh word.
+  useEffect(() => {
+    if (isGhostMode && shuffledWords.length > 0) {
+      const randomIndex = Math.floor(Math.random() * shuffledWords.length);
+      setGhostWord(shuffledWords[randomIndex]);
+    }
+  }, [isGhostMode, shuffledWords]);
 
   const formatted = formatMoney(value, isExpanded, currency);
   const sign = showSign && value !== 0 ? (value > 0 ? '+' : '-') : '';
