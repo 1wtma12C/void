@@ -61,12 +61,16 @@ export default function ReminderModal({ isOpen, onClose, onSave, contactName }) 
                     value={datePart}
                     onChange={(e) => setDatePart(e.target.value)}
                     onFocus={(e) => {
-                      setTimeout(() => {
-                        e.target.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'center',
-                        });
-                      }, 300);
+                      const target = e.target;
+                      if (window.visualViewport) {
+                        const handleResize = () => {
+                          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          window.visualViewport.removeEventListener('resize', handleResize);
+                        };
+                        window.visualViewport.addEventListener('resize', handleResize);
+                      } else {
+                        setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                      }
                     }}
                     className="flex-1 bg-transparent text-sm text-[#32D74B] font-semibold outline-none transition-all"
                   />
@@ -83,12 +87,16 @@ export default function ReminderModal({ isOpen, onClose, onSave, contactName }) 
                     value={timePart}
                     onChange={(e) => setTimePart(e.target.value)}
                     onFocus={(e) => {
-                      setTimeout(() => {
-                        e.target.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'center',
-                        });
-                      }, 300);
+                      const target = e.target;
+                      if (window.visualViewport) {
+                        const handleResize = () => {
+                          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          window.visualViewport.removeEventListener('resize', handleResize);
+                        };
+                        window.visualViewport.addEventListener('resize', handleResize);
+                      } else {
+                        setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                      }
                     }}
                     className="flex-1 bg-transparent text-sm text-[#FF453A] font-semibold outline-none transition-all"
                   />

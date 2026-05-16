@@ -111,7 +111,7 @@ export default function Layout({ children }) {
 
       {/* ── Top Header ─────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-40 w-full flex justify-center pt-[max(env(safe-area-inset-top),16px)] pointer-events-none bg-transparent overflow-visible"
+        className="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-4 pt-[max(env(safe-area-inset-top),16px)] pb-2 pointer-events-none bg-transparent"
       >
         <div className="w-full flex items-center justify-between px-5 pb-3">
           {/* Left: back arrow on sub-pages (not vault), Ghost mode on root */}
@@ -198,9 +198,9 @@ export default function Layout({ children }) {
 
       {/* ── Scrollable Page Content ─────────────────────────────── */}
       <main
-        className="flex-1 relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24 overflow-visible"
+        className="flex-1 relative min-h-dvh mx-auto w-full px-2 md:px-6 flex flex-col items-center justify-center text-center pb-24 overflow-visible pt-24"
         style={{
-          paddingTop:    '20px',
+          paddingTop:    'calc(env(safe-area-inset-top) + 80px)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 90px)',
           paddingLeft:   'env(safe-area-inset-left)',
           paddingRight:  'env(safe-area-inset-right)',

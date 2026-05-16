@@ -66,43 +66,47 @@ export default function SearchModal({ isOpen, onClose }) {
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)',
         }}
       >
-        <div className="flex flex-col items-center pt-4 pb-2 w-full flex-shrink-0 relative">
-          <div className="w-8 h-0.5 rounded-full bg-white/20 mb-3" />
-          <motion.button
-            onClick={onClose}
-            whileTap={{ scale: 0.88 }}
-            className="absolute right-5 top-4 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
-            style={{ background: 'rgba(255,255,255,0.07)' }}
-          >
-            <X size={14} strokeWidth={2} className="text-[#8E8E93]" />
-          </motion.button>
+        <div className="flex flex-col items-center pt-3 pb-1 w-full flex-shrink-0">
+          <div className="w-8 h-0.5 rounded-full bg-white/20 mb-2" />
         </div>
 
-        <div className="px-6 pb-4 border-b border-white/[0.06] flex-shrink-0">
-          <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.04] border border-white/[0.06] rounded-xl focus-within:border-white/20 transition-colors">
-            <Search size={18} className="text-[#8E8E93]" />
+        <div className="w-full flex flex-row items-center gap-3 px-6 pb-4 border-b border-white/[0.06] flex-shrink-0 pt-2">
+          <div className="flex-1 relative flex items-center bg-white/[0.04] border border-white/[0.06] rounded-xl focus-within:border-white/20 transition-colors">
+            <Search size={18} className="absolute left-3.5 text-[#8E8E93]" />
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={(e) => {
-                setTimeout(() => {
-                  e.target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                  });
-                }, 300);
+                const target = e.target;
+                if (window.visualViewport) {
+                  const handleResize = () => {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    window.visualViewport.removeEventListener('resize', handleResize);
+                  };
+                  window.visualViewport.addEventListener('resize', handleResize);
+                } else {
+                  setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                }
               }}
               placeholder="Search contacts..."
-              className="flex-1 bg-transparent border-none outline-none text-[#F5F5F7] text-lg font-medium placeholder-[#3A3A3C]"
+              className="w-full bg-transparent border-none outline-none text-[#F5F5F7] text-base font-medium placeholder-[#3A3A3C] py-3 pl-10 pr-10"
             />
             {query && (
-              <button onClick={() => setQuery('')} className="text-[#8E8E93]">
+              <button onClick={() => setQuery('')} className="absolute right-3 text-[#8E8E93]">
                 <X size={16} />
               </button>
             )}
           </div>
+          <motion.button 
+            onClick={onClose}
+            whileTap={{ scale: 0.88 }} 
+            className="w-11 h-11 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center flex-shrink-0 cursor-pointer"
+            aria-label="Close search"
+          >
+            <X size={18} className="text-[#8E8E93]" />
+          </motion.button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">

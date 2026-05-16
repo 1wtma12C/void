@@ -64,12 +64,16 @@ export default function MagnifiedInput({
           onChange={(e) => onChange(e.target.value)}
           onFocus={(e) => {
             setFocused(true);
-            setTimeout(() => {
-              e.target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-              });
-            }, 300);
+            const target = e.target;
+            if (window.visualViewport) {
+              const handleResize = () => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                window.visualViewport.removeEventListener('resize', handleResize);
+              };
+              window.visualViewport.addEventListener('resize', handleResize);
+            } else {
+              setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+            }
           }}
           onBlur={() => setFocused(false)}
           onKeyDown={onKeyDown}

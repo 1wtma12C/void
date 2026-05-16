@@ -50,12 +50,16 @@ export default function SearchFilter({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={(e) => {
-            setTimeout(() => {
-              e.target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-              });
-            }, 300);
+            const target = e.target;
+            if (window.visualViewport) {
+              const handleResize = () => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                window.visualViewport.removeEventListener('resize', handleResize);
+              };
+              window.visualViewport.addEventListener('resize', handleResize);
+            } else {
+              setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+            }
           }}
           className="w-full bg-white/[0.03] border border-white/10 rounded-full py-3.5 pl-11 pr-12 text-sm text-[#F5F5F7] placeholder:text-[#3A3A3C] outline-none focus:border-white/20 transition-all"
         />
@@ -118,23 +122,23 @@ export default function SearchFilter({
 
                   {/* Custom Range Inputs */}
                   {activeTimeframe === 'custom' && (
-                    <div className="px-3 py-2 flex flex-col gap-2 mt-1">
-                      <div className="flex flex-col gap-1">
+                    <div className="flex flex-col w-full gap-3 mt-2 px-3 py-2">
+                      <div className="flex flex-col gap-1 w-full">
                         <label className="text-[10px] text-[#3A3A3C] uppercase font-bold px-1">Start Date</label>
                         <input 
                           type="date"
                           value={customRange.start}
                           onChange={(e) => onCustomRangeChange?.({ ...customRange, start: e.target.value })}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-xs text-white/80 color-scheme-dark outline-none focus:border-white/20 transition-all"
+                          className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white color-scheme-dark outline-none focus:border-white/20 transition-all text-xs"
                         />
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1 w-full">
                         <label className="text-[10px] text-[#3A3A3C] uppercase font-bold px-1">End Date</label>
                         <input 
                           type="date"
                           value={customRange.end}
                           onChange={(e) => onCustomRangeChange?.({ ...customRange, end: e.target.value })}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-xs text-white/80 color-scheme-dark outline-none focus:border-white/20 transition-all"
+                          className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white color-scheme-dark outline-none focus:border-white/20 transition-all text-xs"
                         />
                       </div>
                     </div>

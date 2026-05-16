@@ -132,12 +132,16 @@ function VaultDashboard() {
                   value={pinStep === 1 ? currentPinInput : newPinInput}
                   onChange={(e) => pinStep === 1 ? setCurrentPinInput(e.target.value) : setNewPinInput(e.target.value)}
                   onFocus={(e) => {
-                    setTimeout(() => {
-                      e.target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center',
-                      });
-                    }, 300);
+                    const target = e.target;
+                    if (window.visualViewport) {
+                      const handleResize = () => {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        window.visualViewport.removeEventListener('resize', handleResize);
+                      };
+                      window.visualViewport.addEventListener('resize', handleResize);
+                    } else {
+                      setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                    }
                   }}
                   className="bg-transparent border-b border-white/20 text-center text-2xl font-bold tracking-widest py-2 outline-none"
                   autoFocus
