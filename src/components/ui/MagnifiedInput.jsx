@@ -62,7 +62,15 @@ export default function MagnifiedInput({
           inputMode={inputMode}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setFocused(true)}
+          onFocus={(e) => {
+            setFocused(true);
+            setTimeout(() => {
+              e.target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+              });
+            }, 300);
+          }}
           onBlur={() => setFocused(false)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}

@@ -86,6 +86,14 @@ export default function SearchModal({ isOpen, onClose }) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={(e) => {
+                setTimeout(() => {
+                  e.target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                  });
+                }, 300);
+              }}
               placeholder="Search contacts..."
               className="flex-1 bg-transparent border-none outline-none text-[#F5F5F7] text-lg font-medium placeholder-[#3A3A3C]"
             />

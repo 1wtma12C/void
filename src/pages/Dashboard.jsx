@@ -78,12 +78,10 @@ function HeroBalance({ globalNetBalance, txCount }) {
       {/* Giant balance number */}
       <div className="relative flex justify-center items-center">
         {/* The Ambient Light Layer */}
-        {!isGhostMode && (
-          <div 
-            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] ${glowColorClass} blur-[80px] opacity-25 z-0 pointer-events-none rounded-full transition-colors duration-700`} 
-            style={{ transform: 'translate(-50%, -50%) translateZ(0)' }}
-          />
-        )}
+        <div 
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] ${glowColorClass} blur-[80px] opacity-25 z-0 pointer-events-none rounded-full transition-colors duration-700`} 
+          style={{ transform: 'translate(-50%, -50%) translateZ(0)' }}
+        />
 
         {/* The Foreground Amount Text */}
         <div className="relative z-10">

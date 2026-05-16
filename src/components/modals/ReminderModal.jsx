@@ -60,6 +60,14 @@ export default function ReminderModal({ isOpen, onClose, onSave, contactName }) 
                     type="date"
                     value={datePart}
                     onChange={(e) => setDatePart(e.target.value)}
+                    onFocus={(e) => {
+                      setTimeout(() => {
+                        e.target.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'center',
+                        });
+                      }, 300);
+                    }}
                     className="flex-1 bg-transparent text-sm text-[#32D74B] font-semibold outline-none transition-all"
                   />
                 </div>
@@ -74,6 +82,14 @@ export default function ReminderModal({ isOpen, onClose, onSave, contactName }) 
                     type="time"
                     value={timePart}
                     onChange={(e) => setTimePart(e.target.value)}
+                    onFocus={(e) => {
+                      setTimeout(() => {
+                        e.target.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'center',
+                        });
+                      }, 300);
+                    }}
                     className="flex-1 bg-transparent text-sm text-[#FF453A] font-semibold outline-none transition-all"
                   />
                 </div>

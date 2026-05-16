@@ -49,6 +49,14 @@ export default function SearchFilter({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={(e) => {
+            setTimeout(() => {
+              e.target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+              });
+            }, 300);
+          }}
           className="w-full bg-white/[0.03] border border-white/10 rounded-full py-3.5 pl-11 pr-12 text-sm text-[#F5F5F7] placeholder:text-[#3A3A3C] outline-none focus:border-white/20 transition-all"
         />
         <button
@@ -69,7 +77,7 @@ export default function SearchFilter({
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute right-6 top-full mt-2 w-64 p-2 rounded-2xl backdrop-blur-xl bg-[#1C1C1E]/80 border border-white/10 shadow-2xl z-50 overflow-hidden max-h-[80vh] overflow-y-auto"
+              className="absolute right-6 top-full mt-2 w-64 p-2 rounded-2xl backdrop-blur-xl bg-[#1C1C1E]/80 border border-white/10 shadow-2xl z-50 max-h-[50vh] overflow-y-auto overscroll-contain"
               style={{ boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
             >
               {/* Type Filter */}
